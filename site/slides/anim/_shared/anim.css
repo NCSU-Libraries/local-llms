@@ -11,17 +11,17 @@
 
 :root {
   /* NC State palette: the roles are fixed in CLAUDE.md > Animations > Palette */
-  --red: #CC0000;        /* Wolfpack Red: work, active cores */
+  --red: #CC0000;        /* Wolfpack Red: your words (a prompt on the move), generated text, a chip at work */
   --red-deep: #990000;   /* Reynolds Red: the darker red */
-  --ink: #1F2328;        /* text */
+  --ink: #1F2328;        /* text; the computer's outline; an idle chip */
   --muted: #57606A;      /* secondary text */
-  --overhead: #9AA0A6;   /* overhead, waiting */
-  --idle: #EEF0F2;       /* idle track, dim core */
-  --tree: #6F7D1C;       /* Genomic Green */
-  --flame: #D14905;      /* Pyroman Flame */
-  --hunt: #FAC800;       /* Hunt Yellow, the fire front */
-  --ash: #3A3A3A;
-  --ground: #F3EEE4;     /* bare ground */
+  --overhead: #9AA0A6;   /* memory already in use (the operating system, Zoom); the network edge */
+  --idle: #EEF0F2;       /* free memory; an empty track */
+  --model: #4156A1;      /* Bio-Indigo: a model, the same block on disk and in memory */
+  --model-soft: #DCE2F2; /* indigo tint: a model's ghost or outline */
+  --ok: #6F7D1C;         /* Genomic Green: it fits; a right answer */
+  --warn: #D14905;       /* Pyroman Flame: too big; a wrong answer; leaving your computer */
+  --hunt: #FAC800;       /* Hunt Yellow: a highlight, sparingly */
 
   /* Supporting neutrals for drawing. They are not roles. */
   --paper: #FFFFFF;
@@ -109,20 +109,6 @@ html.in-deck, html.in-deck body { background: transparent; }
 .fb-t { transform-box: fill-box; transform-origin: center top; }
 .fb-b { transform-box: fill-box; transform-origin: center bottom; }
 
-/* ---- lanes (lanes.js) ---- */
-.lanes .track        { fill: var(--idle); }
-.lanes .lane-label   { font: 700 24px var(--font); fill: var(--ink); }
-.lanes .blk          { fill: var(--red); }
-.lanes .blk.overhead { fill: var(--overhead); }
-.lanes .blk-label    { font: 800 24px var(--font); fill: var(--paper); pointer-events: none; }
-.lanes .axis-line    { stroke: var(--overhead); stroke-width: 3; stroke-linecap: round; fill: none; }
-.lanes .tick         { stroke: var(--overhead); stroke-width: 3; stroke-linecap: round; }
-.lanes .tick-label   { font: 600 22px var(--font); fill: var(--muted); }
-.lanes .axis-title   { font: 600 22px var(--font); fill: var(--muted); }
-.lanes .finish-line  { stroke: var(--ink); stroke-width: 5; stroke-linecap: round; fill: none; }
-.lanes .finish-ghost { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 1 11; fill: none; }
-.lanes .finish-label { font: 800 28px var(--font); fill: var(--ink); }
-.lanes .finish-label.ghost { font: 700 24px var(--font); fill: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }

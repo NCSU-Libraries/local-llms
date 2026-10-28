@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The race</title>
+<link rel="stylesheet" href="_shared/anim.css">
+<style>
+  /* A4: the race. One question, three models, replayed from real timings (data/race.json, written by tools/record_race.py).
+     Three wide lanes, each a model tag, where it runs, and the answer streaming in token by token; a thin gray lane streams
+     the same answer at reading speed. Beat 0 the question; 1 the lanes stream; 2 a check or a cross; 3 tokens per second. */
+  .ask { position: absolute; left: 48px; top: 96px; width: 1184px; height: 64px; margin: 0; padding: 0 30px; display: flex; align-items: center;
+         border-radius: 28px; background: var(--red); color: var(--paper); font: 700 34px/1.08 var(--font); }
+  .ask::after { content: ""; position: absolute; left: 64px; top: 100%; width: 38px; height: 22px; background: var(--red); clip-path: polygon(0 0, 100% 0, 0 100%); }
+
+  /* "x 2.5 faster": shown only when time had to be compressed to keep the beat near 8 s */
+  .speedup { position: absolute; right: 48px; top: 12px; height: 50px; margin: 0; padding: 0 22px; border-radius: 25px; background: var(--hunt); color: var(--ink);
+             font: 800 30px/50px var(--font); white-space: nowrap; opacity: 0; }
+  .speedup span { font-weight: 700; }
+
+  /* a lane: model tag and processor at the left, the answer in the middle, the verdict and the speed at the right.
+     Positions inside a lane are relative to its inner edge (inside the 4 px border). */
+  .lane { position: absolute; left: 48px; width: 1184px; height: 124px; margin: 0; border: 4px solid var(--ink); border-radius: 24px; background: var(--paper); }
+  .ring { position: absolute; left: -4px; top: -4px; right: -4px; bottom: -4px; border: 4px solid var(--ok); border-radius: 24px; opacity: 0; }
+  .lane.bad .ring { border-color: var(--warn); }
+  .tag { position: absolute; left: 20px; top: 9px; width: 184px; height: 46px; margin: 0; border-radius: 12px; background: var(--model); color: var(--paper);
+         font: 800 24px/46px var(--mono); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tag.long { display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 22px; white-space: normal; word-break: break-all; }
+  .proc { position: absolute; left: 20px; top: 67px; height: 40px; margin: 0; padding: 0 14px 0 8px; display: flex; align-items: center; gap: 8px;
+          border-radius: 20px; background: var(--idle); color: var(--ink); font: 800 22px/1 var(--font); white-space: nowrap; }
+  .chipbox { position: relative; display: block; width: 30px; height: 30px; }
+  .chipbox svg { position: absolute; left: 0; top: 0; width: 30px; height: 30px; overflow: visible; }
+  .chipbox .hot { color: var(--red); opacity: 0; }
+
+  .txt { position: absolute; left: 228px; top: 10px; width: 716px; height: 96px; overflow: hidden; }
+  .txt-in { position: relative; font: 600 26px/32px var(--font); color: var(--ink); overflow-wrap: anywhere; }
+
+  .verdict { position: absolute; left: 968px; top: 30px; width: 56px; height: 56px; opacity: 0; }
+  .verdict svg { display: block; width: 56px; height: 56px; }
+  .verdict circle { fill: var(--ok); }
+  .verdict.no circle { fill: var(--warn); }
+  .verdict path { fill: none; stroke: var(--paper); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+  .speed { position: absolute; left: 1036px; top: 16px; width: 120px; margin: 0; text-align: center; opacity: 0; }
+  .speed b { display: block; font: 800 56px/1 var(--font); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .speed span { display: block; margin-top: 6px; font: 600 22px/24px var(--font); color: var(--muted); }
+
+  /* the reading lane: thin and gray. Its text is one line that moves left a word at a time, like a ticker. */
+  .slow { position: absolute; left: 48px; width: 1184px; height: 52px; margin: 0; border: 4px solid var(--overhead); border-radius: 26px; background: var(--idle); }
+  .slow .who, .slow .wps { position: absolute; top: 0; margin: 0; font: 700 22px/44px var(--font); color: var(--muted); white-space: nowrap; }
+  .slow .who { left: 22px; }
+  .slow .wps { right: 22px; }
+  .slow .win { position: absolute; left: 228px; top: 0; width: 716px; height: 44px; overflow: hidden; }
+  .slow .tick { position: absolute; left: 0; top: 0; font: 600 22px/44px var(--font); color: var(--muted); white-space: nowrap; }
+  .slow .tick span + span { margin-left: 0.3em; }
+
+  /* while the data is a stand-in: a diagonal watermark over everything (CSS text, so it is not slide content) */
+  .mark { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; margin: 0; pointer-events: none; }
+  .mark::before { content: "PLACEHOLDER DATA"; position: absolute; left: 640px; top: 400px; transform: translate(-50%, -50%) rotate(-22deg);
+                  font: 800 104px/1 var(--font); letter-spacing: 3px; white-space: nowrap; color: var(--warn); opacity: 0.17; }
+</style>
+</head>
+<body>
+<main id="stage" class="stage" role="img" aria-label="">
+  <h1 class="title">The race</h1>
+  <p class="speedup" id="speedup" aria-hidden="true"></p>
+  <p class="ask" aria-hidden="true"><span id="askText"></span></p>
+  <div class="slow" id="slow" aria-hidden="true">
+    <p class="who">reading speed</p>
+    <div class="win"><div class="tick" id="tick"></div></div>
+    <p class="wps" id="wps"></p>
+  </div>
+</main>
+
+<script src="_shared/anim.js"></script>
+<script>
+"use strict";
+const { html, tok, EASE } = Anim;
+const $ = id => document.getElementById(id);
+const stage = $("stage");
+
+// ---- the scene (stage pixels) ---------------------------------------------------------------------------------------------
+const LANE = { top: 192, h: 124, gap: 14, max: 3 };              // up to three lanes, one under the other
+const WIN = { w: 716, lines: 3, lh: 32 };                        // the answer's window: about three lines (see .txt in the style)
+const SLOW_H = 52;
+const CAP_MS = 8000;                                             // a beat runs about 8 s at most: slower data is played faster
+const LEAD = 300;                                                // a short pause before the lanes start
+const READ_WPS = 5;                                              // reading speed, words per second
+const FADE = 650;                                                // a fresh token settles from red to ink this slowly
+const MOVE = 220;                                                // how long the answer takes to scroll one line
+
+// A chip like the one in the box grammar: a square with a core and short pins. Ink while idle; the .hot copy (red)
+// fades in while its lane generates.
+const CHIP = ["", "hot"].map(c => `<svg class="${c}" viewBox="0 0 36 36" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="3.5">` +
+  `<rect x="6.5" y="6.5" width="23" height="23" rx="5"/><path d="M13 1V5M23 1V5M13 31V35M23 31V35M1 13H5M1 23H5M31 13H35M31 23H35"/></g>` +
+  `<rect x="13" y="13" width="10" height="10" rx="2" fill="currentColor"/></svg>`).join("");
+const CHECK = `<svg viewBox="-28 -28 56 56" aria-hidden="true"><circle r="28"/><path d="M-12 1 L-4 9 L13 -9"/></svg>`;
+const CROSS = `<svg viewBox="-28 -28 56 56" aria-hidden="true"><circle r="28"/><path d="M-10 -10 L10 10 M10 -10 L-10 10"/></svg>`;
+
+// ---- the data -----------------------------------------------------------------------------------------------------------
+// A chunk's text as the lane shows it: no markdown bold marks, and a line break is just a space.
+const clean = s => String(s).replace(/\*\*/g, "").replace(/\s*\n+\s*/g, " ");
+const fmtRate = r => (r >= 10 ? String(Math.round(r)) : String(Math.round(r * 10) / 10));
+const fmtX = f => String(f >= 10 ? Math.ceil(f) : Math.ceil(f * 10) / 10);       // rounded up, so the label is the factor used
+
+let D;                                                           // what setup builds: the lanes, the reading lane, the speed-up
+
+function prepare(d) {
+  if (!d || !Array.isArray(d.lanes) || !d.lanes.length) throw new Error("race.json has no lanes");
+  if (d.lanes.length > LANE.max) console.warn(`race.json has ${d.lanes.length} lanes; only the first ${LANE.max} are drawn`);
+  const lanes = d.lanes.slice(0, LANE.max).map((l, i) => {
+    const tokens = (Array.isArray(l.tokens) ? l.tokens : []).map(([t, s]) => [+t, clean(s)])
+      .filter(([t, s]) => Number.isFinite(t) && s !== "").sort((a, b) => a[0] - b[0]);
+    if (!tokens.length) throw new Error(`race.json: lane ${i} (${l.model}) has no tokens`);
+    return { model: String(l.model), cpu: /cpu/i.test(l.processor || ""), rate: +l.eval_rate, correct: typeof l.correct === "boolean" ? l.correct : null, tokens };
+  });
+  // The gray lane reads the answer that is worth reading: the first right one (the first lane, if none is graded right).
+  const source = lanes.find(l => l.correct) || lanes[0];
+  const words = source.tokens.map(t => t[1]).join("").split(/\s+/).filter(Boolean);
+  const readAt = i => (i + 1) * 1000 / READ_WPS;                 // when word i has been read, in recorded milliseconds
+  const slowest = Math.max(readAt(words.length - 1), ...lanes.map(l => l.tokens[l.tokens.length - 1][0]));
+  // Time is compressed by one factor for every lane, the reading lane included, so their speeds still compare.
+  const N = slowest > CAP_MS ? Number(fmtX(slowest / CAP_MS)) : 1;
+  return { question: String(d.question || ""), machine: d.machine, ollama: d.ollama, placeholder: d.placeholder === true, lanes, words, readAt, N };
+}
+
+// ---- the page -----------------------------------------------------------------------------------------------------------
+function build() {
+  const ask = $("askText");
+  ask.textContent = D.question;
+  for (const size of [34, 30, 26, 22]) { ask.style.fontSize = size + "px"; if (ask.offsetHeight <= 60) break; }   // one line if it fits, two if not
+
+  D.lanes.forEach((L, i) => {
+    const el = L.el = html("div", { class: "lane" + (L.correct === false ? " bad" : ""), "aria-hidden": "true", style: { top: LANE.top + i * (LANE.h + LANE.gap) + "px" } }, stage);
+    L.ring = html("div", { class: "ring" }, el);
+    html("p", { class: "tag" + (L.model.length > 12 ? " long" : ""), text: L.model }, el);
+    const proc = html("p", { class: "proc" }, el);
+    html("span", { class: "chipbox", html: CHIP }, proc);
+    html("span", { text: L.cpu ? "CPU only" : "GPU" }, proc);
+    L.hot = proc.querySelector(".hot");
+    L.inner = html("div", { class: "txt-in" }, html("div", { class: "txt" }, el));
+    L.spans = L.tokens.map(([, s]) => html("span", { text: s }, L.inner));
+    if (L.correct !== null) L.verdict = html("div", { class: "verdict " + (L.correct ? "yes" : "no"), html: L.correct ? CHECK : CROSS }, el);
+    if (Number.isFinite(L.rate)) {
+      L.speed = html("p", { class: "speed" }, el);
+      html("b", { text: fmtRate(L.rate) }, L.speed);
+      html("span", { text: "tokens/s" }, L.speed);
+    }
+  });
+
+  $("slow").style.top = LANE.top + D.lanes.length * (LANE.h + LANE.gap) + "px";
+  $("wps").textContent = `≈ ${READ_WPS} words/s`;
+  D.wordEls = D.words.map((w, i) => html("span", { text: w }, $("tick")));
+  if (D.N > 1) $("speedup").innerHTML = `× ${fmtX(D.N)} <span>faster</span>`;
+  if (D.placeholder) html("div", { class: "mark", "aria-hidden": "true" }, stage);
+}
+
+// Where everything sits once the fonts have laid it out: which line each token is on, how far each answer scrolls to
+// end in view, and where each word of the ticker starts. Read again whenever a beat is drawn.
+function measure() {
+  for (const L of D.lanes) {
+    L.lines = Math.max(1, Math.round(L.inner.offsetHeight / WIN.lh));
+    L.first = Math.max(0, L.lines - WIN.lines);                  // the first line still showing when the answer is all there
+    L.inner.style.top = L.lines < WIN.lines ? (WIN.lines - L.lines) * WIN.lh / 2 + "px" : "0px";   // a short answer sits in the middle
+    L.lineOf = L.spans.map(s => Math.round(s.offsetTop / WIN.lh));
+  }
+  D.left = D.wordEls.map(w => w.offsetLeft);
+  D.right = D.wordEls.map(w => w.offsetLeft + w.offsetWidth);
+  // The ticker moves left in whole words: the shift that makes room for word i is the start of the first word after that need.
+  D.shift = D.right.map(r => (r <= WIN.w ? 0 : D.left.find(x => x >= r - WIN.w) ?? r - WIN.w));
+}
+
+const setOp = (el, on) => { if (el) { el.style.opacity = on ? "1" : "0"; el.style.transform = ""; } };
+
+// One animation that moves `el` along an axis so that the newest text stays in its window. steps: [[ms, shift in px], ...]
+// by time; the shift is how far the content has moved once that step has arrived. A move takes MOVE ms, or less if the next one is due.
+function follow(animate, el, axis, steps) {
+  const moves = [];
+  let cur = 0;
+  for (const [t, s] of steps) if (s > cur) { moves.push([t, s]); cur = s; }
+  if (!moves.length) return;
+  const at = s => (axis === "x" ? `translateX(${-s}px)` : `translateY(${-s}px)`);
+  const pts = [[0, 0]];
+  let from = 0;
+  moves.forEach(([t, s], k) => {
+    const end = Math.min(t + MOVE, k + 1 < moves.length ? moves[k + 1][0] : Infinity);
+    pts.push([t, from], [end, s]);
+    from = s;
+  });
+  const total = pts[pts.length - 1][0];
+  animate(el, pts.map(([t, s]) => ({ offset: t / total, transform: at(s) })), { duration: total, easing: "linear" });
+}
+
+function setup(ctx, data) {
+  D = prepare(data);
+  build();
+
+  const who = L => `${L.model} on ${L.cpu ? "the CPU only" : "a GPU"}`;
+  const list = a => (a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + (a.length > 2 ? "," : "") + " and " + a[a.length - 1]);
+  const count = ["no", "one", "two", "three"][D.lanes.length];
+  const grade = L => `${who(L)} ${L.correct === true ? "gets it right (a check mark)" : L.correct === false ? "gets it wrong (a cross)" : "is not graded"}`;
+  const where = [D.machine && `on ${D.machine}`, D.ollama && `with Ollama ${D.ollama}`].filter(Boolean).join(" ");
+  DEF.alt = [
+    `${D.placeholder ? "Placeholder data: " : ""}A red speech bubble across the top asks "${D.question}" over ${count} lanes (${list(D.lanes.map(who))}) and a thin gray lane for reading speed.`,
+    `All the lanes start together and each model's answer streams in token by token at its recorded pace, while the gray lane shows the same answer at reading speed, about ${READ_WPS} words per second${D.N > 1 ? `, and the whole replay runs ${fmtX(D.N)} times faster than the recording` : ""}.`,
+    `Checked against the expected answer, ${list(D.lanes.map(grade))}.`,
+    `${where ? `Recorded ${where}, the` : "The"} speeds in tokens per second are ${list(D.lanes.map(L => `${who(L)} ${Number.isFinite(L.rate) ? fmtRate(L.rate) : "unknown"}`))}.`,
+  ];
+}
+
+const DEF = {
+  beats: 3,
+  alt: [],
+  load: () => Promise.all([Anim.loadJSON("data/race.json"), Promise.race([document.fonts && document.fonts.ready, new Promise(r => setTimeout(r, 1500))])]).then(r => r[0]),
+  setup,
+
+  render(n) {
+    measure();
+    const on = n >= 1;
+    for (const L of D.lanes) {
+      // a token that has scrolled out of its window is hidden, not just clipped
+      L.spans.forEach((s, j) => { s.style.opacity = on && L.lineOf[j] >= L.first ? "1" : "0"; s.style.color = ""; });
+      L.inner.style.transform = on ? `translateY(${-L.first * WIN.lh}px)` : "none";
+      L.hot.style.opacity = "0";
+      setOp(L.ring, n >= 2);
+      setOp(L.verdict, n >= 2);
+      setOp(L.speed, n >= 3);
+    }
+    const shift = D.shift[D.shift.length - 1];
+    D.wordEls.forEach((w, i) => { w.style.opacity = on && D.left[i] >= shift ? "1" : "0"; });
+    $("tick").style.transform = on ? `translateX(${-shift}px)` : "none";
+    setOp($("speedup"), on && D.N > 1);
+  },
+
+  enter(n, { animate }) {
+    measure();
+    const pop = (el, delay, extra) => animate(el, [{ opacity: 0, transform: "translateY(12px) scale(0.5)" }, { opacity: 1, transform: "translateY(0) scale(1)" }],
+      Object.assign({ duration: 480, delay, easing: EASE.pop }, extra));
+
+    if (n === 1) {
+      const RED = tok("--red"), INK = tok("--ink");
+      const fresh = [{ opacity: 0, color: RED }, { opacity: 1, color: RED, offset: 0.12 }, { opacity: 1, color: INK }];
+      if (D.N > 1) animate($("speedup"), [{ opacity: 0, transform: "translateY(-12px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 500 });
+      for (const L of D.lanes) {
+        const at = j => LEAD + L.tokens[j][0] / D.N;             // when token j shows, in playback milliseconds
+        L.spans.forEach((s, j) => animate(s, fresh, { delay: at(j), duration: FADE, easing: "linear" }));
+        follow(animate, L.inner, "y", L.spans.map((s, j) => [at(j), Math.max(0, L.lineOf[j] - (WIN.lines - 1)) * WIN.lh]));
+        // the chip is red from the moment the lane starts until its last token
+        const last = L.tokens[L.tokens.length - 1][0] / D.N, up = LEAD + Math.min(150, last), hold = LEAD + last, total = hold + 350;
+        animate(L.hot, [{ opacity: 0, offset: 0 }, { opacity: 0, offset: LEAD / total }, { opacity: 1, offset: up / total },
+                        { opacity: 1, offset: hold / total }, { opacity: 0, offset: 1 }], { duration: total, easing: "linear" });
+      }
+      const when = i => LEAD + D.readAt(i) / D.N;
+      D.wordEls.forEach((w, i) => animate(w, [{ opacity: 0 }, { opacity: 1 }], { delay: when(i), duration: 140, easing: "linear" }));
+      follow(animate, $("tick"), "x", D.wordEls.map((w, i) => [when(i), D.shift[i]]));
+    }
+
+    if (n === 2) {
+      D.lanes.forEach((L, i) => {
+        if (!L.verdict) return;
+        pop(L.verdict, 150 + i * 260);
+        animate(L.ring, [{ opacity: 0 }, { opacity: 1 }], { duration: 350, delay: 150 + i * 260 });
+      });
+    }
+
+    if (n === 3) D.lanes.forEach((L, i) => { if (L.speed) pop(L.speed, i * 240, { duration: 520 }); });
+  },
+};
+defineAnimation(DEF);
+</script>
+</body>
+</html>

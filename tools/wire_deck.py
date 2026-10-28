@@ -27,23 +27,12 @@ SITE = ROOT / "site/_site"
 
 # slide id in the deck -> animation page, in deck order
 SLIDES = {
-    "anim-cores": "cores.html",
-    "anim-example": "example.html",
-    "anim-lanes-primer": "lanes-primer.html",
-    "anim-split": "split.html",
-    "anim-talk": "talk.html",
-    "anim-waiting": "waiting.html",
-    "anim-where": "where.html",
-    "anim-cpu-gpu": "cpu-gpu.html",
-    "decision-map": "decision-map.html",
-    "anim-processes": "processes.html",
-    "anim-pool-map": "pool-map.html",
-    "anim-fire": "fire.html",
-    "anim-replay": "replay.html",
-    "anim-scaling": "scaling.html",
-    "anim-ceilings": "ceilings.html",
-    "anim-overhead": "overhead.html",
-    "tool-ladder": "tool-ladder.html",
+    "anim-model-file": "model-file.html",
+    "anim-fit": "fit.html",
+    "anim-pick": "pick.html",
+    "anim-journey": "journey.html",
+    "anim-race": "race.html",
+    "anim-under-the-hood": "under-the-hood.html",
 }
 
 

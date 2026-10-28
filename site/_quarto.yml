@@ -26,6 +26,8 @@ website:
       - href: setup.qmd
         text: Setup
     right:
+      - href: slides/index.qmd
+        text: Slides
       - icon: github
         href: "https://github.com/NCSU-Libraries/local-llms"
         aria-label: "Source on GitHub"

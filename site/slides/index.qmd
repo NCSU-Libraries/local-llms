@@ -1,0 +1,188 @@
+---
+title: "Working with Local LLMs"
+subtitle: "Data Science Special Topics · NC State University Libraries"
+from: markdown-smart
+format:
+  revealjs:
+    theme: [default, ../theme/ncsu.scss, ../theme/slides.scss]
+    width: 1280
+    height: 720
+    margin: 0.06
+    slide-number: true
+    hash-type: number
+    transition: fade
+    background-transition: fade
+    preview-links: false
+    footer: "Data Science Services · go.ncsu.edu/local-llms"
+    logo: ../images/lib_logo_whiteBG.png
+    include-after-body:
+      text: |
+        <script src="anim/_shared/deck-sync.js"></script>
+---
+
+## While we get started
+
+::: {.two-col}
+::: {}
+[{{< var go >}}]{.statement style="white-space:nowrap;font-size:1.2em"}
+
+1. Install Ollama
+2. `ollama pull {{< var starter.name >}}`
+:::
+
+::: {style="text-align:center;padding-top:40px"}
+[QR code to come]{.muted}
+:::
+:::
+
+## Data Science Services {.dss background-image="../images/dss/dss-services.png" background-size="contain" background-color="#FFFFFF" data-state="dss-slide"}
+
+[Our services: consulting, workshops and instruction, specialized spaces. What we do: finding data, wrangling data, analyzing data, visualization, geographic information systems (GIS), software access.]{.visually-hidden}
+
+## Who we are {.dss .dss-team .nostretch data-state="dss-slide"}
+
+![](../images/dss/dss-team.png){fig-alt="Data Science Services, who we are: Mara Blake, Head, Data Science Services; Shannon Ricci, Associate Head, Data Science Services; Jeff Essic, Lead Librarian for GIS; Alp Tezbasaran, Data Science Librarian; Selene Schmittling, Data Science Librarian; Bin Liu, Data Science Librarian; Ashley Pearson, University Library Specialist"}
+
+Our team comes from a variety of academic backgrounds, including nuclear engineering, electrical engineering, industrial and environmental engineering, marine ecology, information science, natural resources, business administration, and geographic information sciences.
+
+## How to contact us {.dss background-image="../images/dss/dss-contact.png" background-size="contain" background-color="#FFFFFF" data-state="dss-slide"}
+
+[How to contact us: go.ncsu.edu/getdatahelp. Email us, book a 30-minute appointment with a Data Science Consultant, or reserve a workstation in the DXL or Dataspace. All communication with the program is through getdatahelp@ncsu.edu.]{.visually-hidden}
+
+## Today's finish line
+
+<ul class="finish" style="font-size:0.62em;line-height:1.4">
+<li>A model running on your computer</li>
+<li>A second one that fits, compared</li>
+<li>The trade-offs, honestly</li>
+</ul>
+
+# Choosing a model {.divider background-color="#CC0000"}
+
+## A model is a file of numbers {#anim-model-file data-state="anim-slide" background-iframe="anim/model-file.html" background-interactive="true"}
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+[Text alternative: A grid of small decimal numbers such as 0.12, minus 1.07 and 0.88 fades out at its edges as if it goes on forever, labeled: a model, billions of numbers. The grid collapses into one block labeled gemma3:1b, 1 billion numbers, 2 GB, which drops onto a shelf labeled disk. One number, 0.12, is shown with a strip of 16 bit squares that shrinks to 4, labeled: each number rounded to 4 bits, and the block shrinks from 2 GB to 0.8 GB. To scale on the disk, the gemma3 family as bars: 1b is 0.8 GB, 4b is 3.4 GB, 12b is 8.2 GB and 27b is 17 GB, and a faded bar for gpt-oss:120b, 65 GB, runs off the right edge of the stage; the b counts billions of numbers.]{.visually-hidden}
+
+## Will it fit? {#anim-fit data-state="anim-slide" background-iframe="anim/fit.html" background-interactive="true"}
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+[Text alternative: Your computer drawn as a box: a 16 GB memory bar with system and apps taking about 5 GB and Zoom about 1 GB, a chip on its right, and the disk below holding four gemma3 files to scale, 1b at 0.8 GB, 4b at 3.4 GB, 12b at 8.2 GB and 27b at 17 GB. The 1b file rises from the disk into memory and grows to 1.2 GB. It fits, and the chip turns red as word tiles stream out fast. The 1b model goes back to the disk and 4b, about 4.5 GB, rises into memory. It fits, and the word tiles come slower. The 4b model goes back and 12b, about 9.5 GB, rises into memory. It fits with only a sliver free, so it is tight, and the word tiles come slower still. The 12b model goes back and 27b, about 19 GB, rises into memory and overflows the end of the bar; the overflow hangs past the end in orange. It doesn't fit, and the chip stalls. Memory clears. A dashed marker at 8 GB says half, with the caption: download at most half your memory.]{.visually-hidden}
+
+## Your pick {#anim-pick data-state="anim-slide" background-iframe="anim/pick.html" background-interactive="true"}
+
+::: {.fragment}
+:::
+
+[Text alternative: The four gemma3 files drawn to scale, 1b at 0.8 GB, 4b at 3.4 GB, 12b at 8.2 GB and 27b at 17 GB, with a dashed line at 8 GB marked today's limit, and three rule cards: at most half your memory; NVIDIA card, at most its memory minus 1 GB; no graphics card, 4b at most. A command card appears reading ollama pull gemma3: followed by a blank to fill in, and a tag reads: poll, which did you pick?]{.visually-hidden}
+
+# Why local {.divider background-color="#CC0000"}
+
+## Where your words go {#anim-journey data-state="anim-slide" background-iframe="anim/journey.html" background-interactive="true"}
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+[Text alternative: Your computer, drawn as a box with a dashed network edge, holds a model in memory and a chip, and a red speech bubble inside it says Summarize my interview notes; on the right, labeled someone else's computer, stands a data center of three server racks. On the cloud path the bubble leaves your computer, the stretch of the edge it crosses flashes orange, and it reaches the data center, where a dollar meter ticks up and the model badge flips from v1 to v2, and an answer bubble comes back. On the local path the data center dims, the same bubble goes to the chip inside your computer, and the answer appears inside, with the edge staying whole. Three badges appear under the computer: a lock, stays on your computer; $0 per use; and a pin, same model every time. One dashed note card says your data's rules still apply, such as IRB and data classification.]{.visually-hidden}
+
+# Speed vs. capability {.divider background-color="#CC0000"}
+
+## The race {#anim-race data-state="anim-slide" background-iframe="anim/race.html" background-interactive="true"}
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+[Text alternative: Placeholder data: A red speech bubble across the top asks "How many r's are in the word strawberry?" over three lanes (gemma3:1b on a GPU, gemma3:12b on a GPU, and gemma3:4b on the CPU only) and a thin gray lane for reading speed. All the lanes start together and each model's answer streams in token by token at its recorded pace, while the gray lane shows the same answer at reading speed, about 5 words per second. Checked against the expected answer, gemma3:1b on a GPU gets it wrong (a cross), gemma3:12b on a GPU gets it right (a check mark), and gemma3:4b on the CPU only gets it right (a check mark). Recorded on MacBook Pro, Apple silicon, 24 GB (placeholder) with Ollama 0.40.12, the speeds in tokens per second are gemma3:1b on a GPU 123, gemma3:12b on a GPU 22, and gemma3:4b on the CPU only 9.1.]{.visually-hidden}
+
+# Under the hood {.divider background-color="#CC0000"}
+
+## One server, three windows {#anim-under-the-hood data-state="anim-slide" background-iframe="anim/under-the-hood.html" background-interactive="true"}
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+::: {.fragment}
+:::
+
+[Text alternative: Your computer holds three windows on the left, the Ollama app, a Terminal and Python, a server block labeled Ollama, localhost:11434 in the middle, and on the right a memory bar, the chip and a disk holding a model file; only the app window is lit, with a red question bubble in it. The app sends the question to the Ollama server, the server loads the model from disk into memory, the chip generates the answer, and the reply goes back to the app window. The Terminal and Python windows light up and connect to the same server: one server, three windows. From outside the dashed edge, ollama.com sends a model file in through the edge onto the disk, a download that happens once; then a model with a cloud tag sends an orange bubble out through the edge to run on someone else's computer, until the Cloud switch is turned off and that path disappears. The model in memory carries a badge, gemma3:1b with ID 97558784bdc9, the chip uses seed 42, and two identical answer bubbles sit side by side: same model plus same seed gives the same answer.]{.visually-hidden}
+
+# Your turn {.divider background-color="#CC0000"}
+
+## Open the hands-on page
+
+::: {style="text-align:center;padding-top:60px"}
+[{{< var go >}} → Hands-on]{.statement style="white-space:nowrap"}
+:::
+
+## Choosing your next model
+
+<ul class="finish" style="font-size:0.62em;line-height:1.4">
+<li>Does it fit?</li>
+<li>Is it fast enough?</li>
+<li>Does it suit the task?</li>
+<li>Does it work on your prompts?</li>
+<li>Which exact version?</li>
+</ul>
+
+## Use it from Python
+
+```python
+import ollama
+
+reply = ollama.chat(model="gemma3:1b",
+                    messages=[{"role": "user", "content": "Hello!"}])
+print(reply.message.content)
+```
+
+# Questions {.divider background-color="#CC0000"}
+
+## Tell us how we did
+
+::: {style="text-align:center"}
+[go.ncsu.edu/dss-workshop-eval](https://go.ncsu.edu/dss-workshop-eval){style="font-size:1.5em;font-weight:800"}
+
+![](../images/dss/qr-eval.png){.qr .qr-big fig-alt="QR code for the workshop evaluation, go.ncsu.edu/dss-workshop-eval"}
+:::

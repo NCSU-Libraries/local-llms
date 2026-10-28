@@ -48,15 +48,19 @@ Paths marked *(planned)* don't exist yet.
 
 | Path | Contents |
 | --- | --- |
-| `site/` | Quarto website. The deck will be `site/slides/index.qmd` *(planned)* |
+| `site/` | Quarto website |
+| `site/slides/index.qmd` | The deck: a title plus a visual per slide, explanations in the talking points. Its animation slides are written by `tools/wire_deck.py` |
+| `site/slides/anim/*.html` | One page per animation: `model-file`, `fit`, `pick`, `journey`, `race`, `under-the-hood`. Their storyboard is in `instructor/plan.md` |
+| `site/slides/anim/data/race.json` | The race's recorded runs, written by `tools/record_race.py` on Alp's Mac. Don't hand-edit it |
 | `site/_variables.yml` | Facts used on several pages and in the deck: event, links, the go link, the Ollama version the pages were checked against |
 | `site/setup.qmd` | Install Ollama (Mac and Windows tabs, a Linux note), pull the starter model, "It works when" checks, and fixes |
 | `site/hands-on.qmd` *(planned)* | The session's steps: chat, measure speed, choose and compare a second model, clean up |
 | `site/python.qmd` *(planned)* | The extra for coders: the local API from Python |
-| `site/slides/anim/_shared/` | The animation framework copied from parallelization-with-python. `anim.css` still has that deck's lanes and fire styles; replace them with the box grammar's when the first animation is built |
+| `site/slides/anim/_shared/` | The animation framework copied from parallelization-with-python: stage fit, beats, deck bridge, and this deck's color tokens |
+| `tools/record_race.py` | Records the race through Ollama's local API: one streamed answer per lane, GPU or CPU only |
 | `tools/check_links.py` | Checks every link and image in `site/_site` (`--web` also requests external URLs) |
 | `tools/shoot.mjs` | Headless Chrome screenshots of pages and slides |
-| `tools/wire_deck.py` | Rewrites each animation slide in the deck from its page. Its slide map still lists parallelization's animations; replace it with this deck's |
+| `tools/wire_deck.py` | Rewrites each animation slide in the deck from its page: the title, one fragment per beat, the text alternative and `data-state`. `--check` steps every slide of the rendered deck |
 | `tools/check_overlaps.py` | Steps every slide and fragment at three window sizes; reports content under the footer, logo or slide number, text over text, and anything off the slide |
 | `instructor/` | Private and gitignored: the plan, run sheet, talking points and the email draft |
 
@@ -67,6 +71,9 @@ Q=/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto   # Quarto 
 $Q render site                  # full build into site/_site
 $Q preview site                 # live preview while editing
 python3 tools/check_links.py    # after a render
+uv run --with playwright python -I tools/wire_deck.py          # after adding or changing an animation; then render
+uv run --with playwright python -I tools/wire_deck.py --check  # after a render: every animation follows the clicks
+uv run --with playwright python -I tools/check_overlaps.py     # after a render: nothing under the chrome or off the slide
 ```
 
 The Pages workflow (`.github/workflows/deploy-pages.yml`) runs `quarto render site` with Quarto 1.10.18. Only Alp
@@ -117,7 +124,20 @@ parallelization-with-python:
   continuous motion.
 - **Accessible:** every animated slide carries a visually hidden text alternative, and its last beat reads as a static
   diagram.
-- **Palette:** NC State brand colors, as tokens in `_shared/anim.css`; don't hard-code colors in a page.
+- **Palette (NC State brand),** as tokens in `_shared/anim.css`; don't hard-code colors in a page:
+
+  | Role | Token |
+  | --- | --- |
+  | Your words, generated text, a chip at work | `--red` Wolfpack Red `#CC0000` |
+  | Text, the computer's outline, an idle chip | `--ink` `#1F2328`, `--muted` `#57606A` |
+  | Memory in use, the network edge | `--overhead` `#9AA0A6` |
+  | Free memory, an empty track | `--idle` `#EEF0F2` |
+  | A model, the same block on disk and in memory | `--model` Bio-Indigo `#4156A1` |
+  | It fits, a right answer | `--ok` Genomic Green `#6F7D1C` |
+  | Too big, a wrong answer, leaving your computer | `--warn` Pyroman Flame `#D14905` |
+
+- **The picture grammar, the box:** the computer, its network edge, memory, disk, chip and model blocks are drawn the
+  same way on every page. The rules and the real model sizes are in `instructor/plan.md` > *Picture grammar*.
 
 Embedding, in the deck (`tools/wire_deck.py` writes these slides from the pages; don't edit them by hand):
 

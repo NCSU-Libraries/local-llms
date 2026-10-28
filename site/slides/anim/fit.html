@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Will it fit?</title>
+<link rel="stylesheet" href="_shared/anim.css">
+<style>
+  /* A3: will it fit? The computer fills the stage. One scale for the whole page: 62.5 px per GB (K in the script), so the
+     16 GB of memory is 1000 px wide and the 27b file on the disk (17 GB) is 1062 px. Memory is the hero; the chip sits to its
+     right; the disk below holds the four gemma3 files as rows at the same scale. A model rises from its row into memory. */
+  .abs { position: absolute; margin: 0; }
+  .nm  { position: absolute; margin: 0; white-space: nowrap; font: 600 22px/26px var(--font); color: var(--muted); }
+  .box { position: absolute; }
+  .track { background: var(--idle); border-radius: 14px; }
+  .used  { background: var(--overhead); color: var(--paper); font: 800 22px/76px var(--font); padding-left: 16px; white-space: nowrap; }
+  .mdl   { position: absolute; background: var(--model); border-radius: 14px; opacity: 0; }
+  .over  { position: absolute; background: var(--warn); border-radius: 0 14px 14px 0; opacity: 0; color: var(--paper); font: 800 26px/76px var(--font); padding-left: 18px; white-space: nowrap; }
+  .tagl  { position: absolute; margin: 0; white-space: nowrap; font: 800 24px/28px var(--mono); color: var(--ink); opacity: 0; }
+  .tagl span { font: 600 24px/28px var(--font); color: var(--muted); }
+  .disk  { position: absolute; background: var(--idle); border: 4px solid var(--line); border-radius: 22px; }
+  .row   { position: absolute; background: var(--model); border-radius: 10px; }
+  .rl    { position: absolute; margin: 0; white-space: nowrap; font: 800 22px/40px var(--mono); color: var(--paper); }
+  .rs    { position: absolute; margin: 0; white-space: nowrap; font: 600 22px/40px var(--font); color: var(--ink); }
+  .stat  { position: absolute; left: 82px; top: 316px; margin: 0; white-space: nowrap; font: 800 44px/52px var(--font); opacity: 0; }
+  .stat.ok { color: var(--ok); } .stat.warn { color: var(--warn); }
+  .stat.tight { color: var(--ink); background: var(--hunt); padding: 0 18px; border-radius: 14px; left: 78px; }
+  .stat.cap { color: var(--ink); font-size: 30px; }
+  .tile  { position: absolute; left: 1100px; top: 333px; width: 46px; height: 24px; border-radius: 8px; background: var(--red); opacity: 0; }
+</style>
+</head>
+<body>
+<main id="stage" class="stage" role="img" aria-label="">
+  <h1 class="title">Will it fit?</h1>
+
+  <svg class="art" id="art" viewBox="0 0 1280 720" aria-hidden="true"></svg>
+
+  <p class="nm" style="left:84px; top:128px" aria-hidden="true">your computer</p>
+  <p class="nm" style="left:78px; top:158px" aria-hidden="true">memory · 16 GB</p>
+  <div id="layer" aria-hidden="true"></div>
+</main>
+
+<script src="_shared/anim.js"></script>
+<script>
+"use strict";
+const { svg, html, tok, EASE } = Anim;
+const $ = id => document.getElementById(id);
+const art = $("art"), layer = $("layer");
+
+// ---- geometry (stage pixels). One scale: K px per GB. -----------------------------------------------------------------
+const K = 62.5;
+const X0 = 78;                                         // memory and the disk rows start here
+const MEM = { y: 190, h: 76 };
+const SYS = 5, ZOOM = 1;                               // GB already in use on a 16 GB laptop
+const SLOT = X0 + (SYS + ZOOM) * K;                    // where a model starts in memory
+const END = X0 + 16 * K;                               // the end of memory: 1078
+const DISK = { x: 64, y: 424, w: 1146, h: 226 };
+const rowY = i => 462 + i * 46;
+const MODELS = [
+  { tag: "gemma3:1b",  disk: 0.8, mem: 1.2, size: "1.2 GB" },
+  { tag: "gemma3:4b",  disk: 3.4, mem: 4.5, size: "≈ 4.5 GB" },
+  { tag: "gemma3:12b", disk: 8.2, mem: 9.5, size: "≈ 9.5 GB" },
+  { tag: "gemma3:27b", disk: 17,  mem: 19,  size: "≈ 19 GB" },
+];
+const CHIP = { x: 1148, y: 345 };
+const STATE = [null, 0, 1, 2, 3, null];                // which model sits in memory at each beat
+const STAT = [null, ["fits", "ok"], ["fits", "ok"], ["tight", "tight"], ["doesn’t fit", "warn"], ["download ≤ half your memory", "cap"]];
+const RATE = [0, 140, 300, 600, 0, 0];                 // ms between word tiles
+const diskG = i => ({ left: X0, top: rowY(i), width: MODELS[i].disk * K, height: 40 });
+const memG = i => ({ left: SLOT, top: MEM.y, width: Math.min(MODELS[i].mem * K, END - SLOT), height: MEM.h });   // 27b is cut at the end of memory; the rest hangs past it in orange
+const OVER_W = 132;                                    // the overflow is drawn clipped: 19 GB from 6 GB used overshoots by 9 GB, which would run off the stage
+const px = g => ({ left: g.left + "px", top: g.top + "px", width: g.width + "px", height: g.height + "px" });
+
+// ---- the computer, its edge, the chip ---------------------------------------------------------------------------------
+svg("rect", { x: 34, y: 92, width: 1212, height: 592, rx: 54, fill: "none", stroke: "var(--overhead)", "stroke-width": 4, "stroke-dasharray": "14 12" }, art);
+svg("rect", { x: 58, y: 116, width: 1164, height: 544, rx: 28, fill: "var(--paper)", stroke: "var(--ink)", "stroke-width": 5 }, art);
+function chipLayer(fill) {
+  const g = svg("g", { fill }, art);
+  for (const o of [-30, -10, 10, 30]) {
+    svg("rect", { x: CHIP.x + o - 6, y: CHIP.y - 62, width: 12, height: 16, rx: 4 }, g);
+    svg("rect", { x: CHIP.x + o - 6, y: CHIP.y + 46, width: 12, height: 16, rx: 4 }, g);
+    svg("rect", { x: CHIP.x - 62, y: CHIP.y + o - 6, width: 16, height: 12, rx: 4 }, g);
+    svg("rect", { x: CHIP.x + 46, y: CHIP.y + o - 6, width: 16, height: 12, rx: 4 }, g);
+  }
+  svg("rect", { x: CHIP.x - 50, y: CHIP.y - 50, width: 100, height: 100, rx: 18 }, g);
+  return g;
+}
+const chipInk = chipLayer("var(--ink)");
+const chipRed = chipLayer("var(--red)");
+svg("circle", { cx: CHIP.x - 34, cy: CHIP.y - 34, r: 6, fill: "var(--paper)", opacity: 0.55 }, art);
+
+// ---- memory: the bar, what is in it, and the model slot -----------------------------------------------------------------
+const track = html("div", { class: "box track", style: { left: X0 + "px", top: MEM.y + "px", width: 16 * K + "px", height: MEM.h + "px" } }, layer);
+html("div", { class: "box used", text: "system + apps ≈ 5 GB", style: { left: X0 + "px", top: MEM.y + "px", width: SYS * K + "px", height: MEM.h + "px", borderRadius: "14px 0 0 14px" } }, layer);
+html("div", { class: "box used", style: { left: X0 + SYS * K + "px", top: MEM.y + "px", width: ZOOM * K + "px", height: MEM.h + "px", borderLeft: "4px solid var(--paper)" } }, layer);
+html("p", { class: "nm", text: "Zoom ≈ 1 GB", style: { left: SLOT - 150 + "px", top: MEM.y + MEM.h + 8 + "px", width: "146px", textAlign: "right" } }, layer);
+
+// ---- the disk and its four files ---------------------------------------------------------------------------------------
+html("div", { class: "disk", style: { left: DISK.x + "px", top: DISK.y + "px", width: DISK.w + "px", height: DISK.h + "px" } }, layer);
+html("p", { class: "nm", text: "disk", style: { left: DISK.x + 22 + "px", top: DISK.y + 6 + "px" } }, layer);
+const rows = MODELS.map((m, i) => {
+  const g = diskG(i);
+  const el = html("div", { class: "row", style: px(g) }, layer);
+  if (g.width > 200) html("p", { class: "rl", text: m.tag, style: { left: g.left + 14 + "px", top: g.top + "px" } }, layer);
+  else html("p", { class: "rl", text: m.tag, style: { left: g.left + g.width + 14 + "px", top: g.top + "px", color: "var(--ink)" } }, layer);
+  const sz = `${m.disk} GB`;
+  if (i === 3) html("p", { class: "rs", text: sz, style: { left: g.left + g.width - 78 + "px", top: g.top + "px", color: "var(--paper)", fontWeight: 800 } }, layer);
+  else html("p", { class: "rs", text: sz, style: { left: g.left + g.width + (g.width > 200 ? 14 : 160) + "px", top: g.top + "px" } }, layer);
+  return el;
+});
+
+// ---- the model in memory, its label, the overflow, the marker, the status, the word tiles ------------------------------
+const mem = html("div", { class: "mdl" }, layer);
+const over = html("div", { class: "over", text: "+9 GB", style: { left: END + "px", top: MEM.y + "px", height: MEM.h + "px", width: OVER_W + "px" } }, layer);
+const tagl = html("p", { class: "tagl", style: { left: SLOT + 4 + "px", top: MEM.y + MEM.h + 8 + "px" } }, layer);
+const stat = html("p", { class: "stat" }, layer);
+const art2 = svg("svg", { class: "art", viewBox: "0 0 1280 720" }, $("stage"));   // above the disk, so the marker crosses it
+const marker = svg("g", { opacity: 0 }, art2);
+svg("line", { x1: X0 + 8 * K, x2: X0 + 8 * K, y1: 184, y2: DISK.y + DISK.h - 10, stroke: "var(--ink)", "stroke-width": 4, "stroke-dasharray": "10 8" }, marker);
+const markerLbl = html("p", { class: "nm", text: "half", style: { left: X0 + 8 * K + 12 + "px", top: 158 + "px", fontWeight: 800, color: "var(--ink)", opacity: 0 } }, layer);
+const tiles = Array.from({ length: 34 }, () => html("i", { class: "tile" }, layer));
+
+const setG = (el, g) => Object.assign(el.style, px(g));
+let lastStat = -1;
+function setStat(n) {
+  const s = STAT[n];
+  stat.style.opacity = s ? 1 : 0;
+  if (!s) return;
+  stat.textContent = s[0];
+  stat.className = "stat " + s[1];
+}
+const fade = (el, a, b, delay = 0, dur = 400) => ({ el, kf: [{ opacity: a }, { opacity: b }], o: { delay, duration: dur } });
+
+defineAnimation({
+  beats: 5,
+  alt: [
+    "Your computer drawn as a box: a 16 GB memory bar with system and apps taking about 5 GB and Zoom about 1 GB, a chip on its right, and the disk below holding four gemma3 files to scale, 1b at 0.8 GB, 4b at 3.4 GB, 12b at 8.2 GB and 27b at 17 GB.",
+    "The 1b file rises from the disk into memory and grows to 1.2 GB. It fits, and the chip turns red as word tiles stream out fast.",
+    "The 1b model goes back to the disk and 4b, about 4.5 GB, rises into memory. It fits, and the word tiles come slower.",
+    "The 4b model goes back and 12b, about 9.5 GB, rises into memory. It fits with only a sliver free, so it is tight, and the word tiles come slower still.",
+    "The 12b model goes back and 27b, about 19 GB, rises into memory and overflows the end of the bar; the overflow hangs past the end in orange. It doesn't fit, and the chip stalls.",
+    "Memory clears. A dashed marker at 8 GB says half, with the caption: download at most half your memory.",
+  ],
+
+  render(n) {
+    const L = STATE[n];
+    rows.forEach((r, i) => { r.style.opacity = L === i ? 0.3 : 1; r.style.transform = ""; });
+    mem.style.opacity = L == null ? 0 : 1; mem.style.transform = "";
+    mem.style.borderRadius = L === 3 ? "14px 0 0 14px" : "14px";
+    if (L != null) setG(mem, memG(L));
+    over.style.opacity = L === 3 ? 1 : 0;
+    tagl.style.opacity = L == null ? 0 : 1; tagl.style.transform = "";
+    if (L != null) tagl.innerHTML = `${MODELS[L].tag} <span>· ${MODELS[L].size}</span>`;
+    setStat(n); stat.style.transform = "";
+    chipRed.style.opacity = RATE[n] ? 1 : 0;
+    chipRed.style.transform = ""; chipInk.style.transform = "";
+    marker.style.opacity = n === 5 ? 1 : 0;
+    markerLbl.style.opacity = n === 5 ? 1 : 0;
+    tiles.forEach(t => { t.style.opacity = 0; });
+  },
+
+  enter(n, { animate, later }) {
+    const go = (list) => list.forEach(a => animate(a.el, a.kf, a.o));
+    const rise = (i, d) => {                                   // the file rises from its row into memory
+      animate(rows[i], [{ opacity: 1 }, { opacity: 0.3 }], { duration: 400, delay: d });
+      mem.style.opacity = 1; mem.style.borderRadius = i === 3 ? "14px 0 0 14px" : "14px";
+      animate(mem, [px(diskG(i)), px(memG(i))], { duration: 1000, delay: d, easing: EASE.inOut });
+      tagl.innerHTML = `${MODELS[i].tag} <span>· ${MODELS[i].size}</span>`;
+      animate(tagl, [{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: d + 900 });
+      if (i === 3) animate(over, [{ opacity: 0, transform: "scaleX(0.2)" }, { opacity: 1, transform: "scaleX(1)" }], { duration: 600, delay: d + 1000, transformOrigin: "left" });
+    };
+    const back = (i, d) => {                                   // and goes back to the disk
+      animate(mem, [{ opacity: 1, ...px(memG(i)) }, { opacity: 1, ...px(diskG(i)) }, { opacity: 0, ...px(diskG(i)) }], { duration: 800, delay: d, easing: EASE.inOut });
+      animate(rows[i], [{ opacity: 0.3 }, { opacity: 1 }], { duration: 400, delay: d + 500 });
+      animate(tagl, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: d });
+      if (i === 3) animate(over, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: d });
+    };
+    const status = (d) => {
+      const s = STAT[n];
+      later(d, () => { stat.textContent = s[0]; stat.className = "stat " + s[1]; });
+      animate(stat, [{ opacity: 0, transform: "scale(0.8)" }, { opacity: 1, transform: "scale(1)" }], { duration: 450, delay: d, easing: EASE.pop });
+    };
+    const chip = (on, d) => animate(chipRed, [{ opacity: on ? 0 : 1 }, { opacity: on ? 1 : 0 }], { duration: 350, delay: d });
+    const stream = (start, gap, end) => {                      // word tiles leave the chip, to the left
+      let k = 0;
+      for (let t = start; t < end && k < tiles.length; t += gap, k++) {
+        animate(tiles[k], [{ opacity: 0, transform: "translateX(0px)" }, { opacity: 1, transform: "translateX(-60px)", offset: 0.12 }, { opacity: 1, transform: "translateX(-340px)", offset: 0.8 }, { opacity: 0, transform: "translateX(-420px)" }],
+          { duration: 1500, delay: t, easing: EASE.linear });
+      }
+    };
+
+    if (n === 1) { rise(0, 0); status(1000); chip(true, 1000); stream(1300, RATE[1], 4300); }
+    if (n === 2) {
+      animate(stat, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 }); chip(false, 0);
+      back(0, 0); rise(1, 900); status(1900); chip(true, 1900); stream(2200, RATE[2], 5200);
+    }
+    if (n === 3) {
+      animate(stat, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 }); chip(false, 0);
+      back(1, 0); rise(2, 900); status(1900); chip(true, 1900); stream(2200, RATE[3], 5200);
+    }
+    if (n === 4) {
+      animate(stat, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 }); chip(false, 0);
+      back(2, 0); rise(3, 900); status(2000);
+      for (let k = 0; k < 4; k++) animate(chipInk, [{ transform: "translateX(0px)" }, { transform: "translateX(-5px)" }, { transform: "translateX(5px)" }, { transform: "translateX(0px)" }], { duration: 300, delay: 2100 + k * 350, easing: EASE.linear });
+    }
+    if (n === 5) {
+      animate(stat, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+      back(3, 0);
+      later(400, () => { stat.textContent = STAT[5][0]; stat.className = "stat " + STAT[5][1]; });
+      animate(stat, [{ opacity: 1 }, { opacity: 0, offset: 0.2 }, { opacity: 0, offset: 0.7 }, { opacity: 1 }], { duration: 1800 });
+      animate(marker, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: 900 });
+      animate(markerLbl, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: 900 });
+    }
+  },
+});
+</script>
+</body>
+</html>

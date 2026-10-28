@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A model is a file of numbers</title>
+<link rel="stylesheet" href="_shared/anim.css">
+<style>
+  /* A2: a model is a file of numbers. One scale for the whole page: 60 px per GB (K in the script), so 2 GB is 120 px wide,
+     0.8 GB is 48 px and 17 GB is 1020 px. A grid of numbers collapses into one block that drops onto the disk; rounding the
+     numbers to 4 bits shrinks it; then the whole family is drawn on the disk, to scale. */
+  .abs { position: absolute; margin: 0; }
+  .num { position: absolute; width: 100px; height: 22px; margin: -11px 0 0 -50px; text-align: center; font: 400 22px/22px var(--mono); color: var(--muted); white-space: nowrap; }
+  .lbl { left: 0; top: 598px; width: 1280px; text-align: center; font: 800 38px/1.2 var(--font); color: var(--ink); opacity: 0; }
+
+  .disk { position: absolute; left: 24px; width: 1232px; background: var(--idle); border: 4px solid var(--line); border-radius: 26px; opacity: 0; }
+  .disk i { position: absolute; left: 28px; top: 14px; font: 600 22px/1.2 var(--font); font-style: normal; color: var(--muted); }
+
+  .blk { position: absolute; background: var(--model); border-radius: 12px; opacity: 0; }
+  .big { position: absolute; margin: 0; white-space: nowrap; font: 800 52px/56px var(--font); color: var(--ink); opacity: 0; }
+  .htxt { position: absolute; left: 470px; margin: 0; opacity: 0; }
+  .htxt b { display: block; font: 800 36px/44px var(--mono); color: var(--ink); }
+  .htxt span { display: block; font: 600 26px/36px var(--font); color: var(--muted); }
+
+  .card0 { position: absolute; left: 150px; top: 110px; width: 170px; height: 80px; border: 4px solid var(--ink); border-radius: 18px; background: var(--paper);
+           text-align: center; font: 800 50px/72px var(--mono); color: var(--ink); opacity: 0; }
+  .arrow { position: absolute; left: 330px; top: 134px; border-left: 20px solid var(--overhead); border-top: 16px solid transparent; border-bottom: 16px solid transparent; opacity: 0; }
+  .bit { position: absolute; top: 132px; width: 36px; height: 36px; border-radius: 8px; background: var(--model); opacity: 0; }
+  .bits { position: absolute; top: 128px; margin: 0; white-space: nowrap; font: 800 30px/44px var(--font); color: var(--ink); opacity: 0; }
+
+  .rtag { position: absolute; left: 60px; height: 62px; margin: 0; font: 800 26px/62px var(--mono); color: var(--ink); opacity: 0; }
+  .rsz  { position: absolute; height: 62px; margin: 0; white-space: nowrap; font: 800 26px/62px var(--font); color: var(--ink); opacity: 0; }
+  .ghost { position: absolute; left: 140px; height: 62px; border: 4px dashed var(--model); border-right: 0; border-radius: 12px 0 0 12px; background: var(--model-soft);
+           overflow: hidden; white-space: nowrap; font: 800 24px/54px var(--mono); color: var(--model); padding-left: 16px; opacity: 0; }
+</style>
+</head>
+<body>
+<main id="stage" class="stage" role="img" aria-label="">
+  <h1 class="title">A model is a file of numbers</h1>
+
+  <div id="grid" aria-hidden="true"></div>
+  <p class="abs lbl" id="lbl0" aria-hidden="true">a model: billions of numbers</p>
+
+  <div class="disk" id="disk" aria-hidden="true"><i>disk</i></div>
+  <div class="blk" id="hero" aria-hidden="true"></div>
+  <p class="big" id="size" aria-hidden="true">2 GB</p>
+  <p class="htxt" id="htxt" aria-hidden="true"><b>gemma3:1b</b><span>1 billion numbers</span></p>
+
+  <div class="card0" id="card" aria-hidden="true">0.12</div>
+  <i class="arrow" id="arrow" aria-hidden="true"></i>
+  <div id="bitsWrap" aria-hidden="true"></div>
+  <p class="bits" id="bitsLbl" aria-hidden="true">16 bits</p>
+  <p class="abs lbl" id="lbl2" aria-hidden="true">each number rounded to 4 bits</p>
+
+  <div id="rows" aria-hidden="true"></div>
+  <p class="abs lbl" id="lbl3" aria-hidden="true">the b counts billions of numbers</p>
+</main>
+
+<script src="_shared/anim.js"></script>
+<script>
+"use strict";
+const { EASE } = Anim;
+const $ = id => document.getElementById(id);
+const PX = new Set(["left", "top", "width", "height"]);
+const css = (el, o) => { for (const k in o) el.style[k] = PX.has(k) ? o[k] + "px" : o[k]; el.style.transform = ""; };
+
+// ---- geometry (stage pixels). One scale: K px per GB. ----------------------------------------------------------------
+const K = 60;
+const BX = 140;                                       // where every bar starts
+const DISK_S = { top: 250, h: 290 };                  // the disk while one file sits on it
+const DISK_L = { top: 104, h: 450 };                  // the disk holding the family
+const HERO_Y = DISK_S.top + 92, HERO_H = 120;         // beats 1-2: the block's top and height
+const ROW = { y0: 160, pitch: 78, h: 62 };
+const rowY = i => ROW.y0 + i * ROW.pitch;
+const FAM = [["1b", 0.8, "0.8 GB"], ["4b", 3.4, "3.4 GB"], ["12b", 8.2, "8.2 GB"], ["27b", 17, "17 GB"]];
+const GHOST_W = 1280 - BX;                            // the 65 GB bar (3900 px at this scale) runs off the stage's right edge
+const STRIP = { x: 360, pitch: 44 };
+const COLLECT = { x: 640, y: 200 };                   // where the grid collapses: the block forms here, above the disk
+
+// ---- the grid of numbers: 10 x 6, fading toward the edges ------------------------------------------------------------
+const grid = $("grid");
+let seed = 7;
+const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+const fmt = v => (v < 0 ? "−" : "") + Math.abs(v).toFixed(2);
+const cells = [];
+for (let r = 0; r < 6; r++) for (let c = 0; c < 10; c++) {
+  const cx = 640 + (c - 4.5) * 112, cy = 340 + (r - 2.5) * 54;
+  let v = Math.round((rnd() * 3.6 - 1.8) * 100) / 100;
+  if (r === 2 && c === 4) v = 0.12;
+  if (r === 3 && c === 6) v = -1.07;
+  if (r === 1 && c === 3) v = 0.88;
+  const el = Anim.html("span", { class: "num", text: fmt(v), style: { left: cx + "px", top: cy + "px" } }, grid);
+  const fx = Math.abs(c - 4.5) / 4.5, fy = Math.abs(r - 2.5) / 2.5;
+  el.style.opacity = (1 - 0.82 * fx * fx) * (1 - 0.75 * fy * fy);
+  cells.push({ el, dx: COLLECT.x - cx, dy: COLLECT.y - cy, d: Math.hypot(fx, fy) });
+}
+
+// ---- bits, rows ------------------------------------------------------------------------------------------------------
+const bits = Array.from({ length: 16 }, (_, i) => Anim.html("i", { class: "bit", style: { left: STRIP.x + i * STRIP.pitch + "px" } }, $("bitsWrap")));
+const rows = FAM.map(([tag, gb, sz], i) => ({
+  tag: Anim.html("p", { class: "rtag", text: tag, style: { top: rowY(i) + "px" } }, $("rows")),
+  bar: i === 0 ? null : Anim.html("div", { class: "blk", style: { left: BX + "px", top: rowY(i) + "px", height: ROW.h + "px" } }, $("rows")),
+  sz: Anim.html("p", { class: "rsz", text: sz, style: { top: rowY(i) + "px", left: BX + gb * K + 14 + "px" } }, $("rows")),
+  w: gb * K,
+}));
+const gTag = Anim.html("p", { class: "rtag", text: "120b", style: { top: rowY(4) + "px" } }, $("rows"));
+const gBar = Anim.html("div", { class: "ghost", text: "gpt-oss:120b · 65 GB", style: { top: rowY(4) + "px" } }, $("rows"));
+
+const disk = $("disk"), hero = $("hero"), size = $("size"), htxt = $("htxt"), card = $("card"), arrow = $("arrow");
+const bitsLbl = $("bitsLbl"), lbl0 = $("lbl0"), lbl2 = $("lbl2"), lbl3 = $("lbl3");
+const heroW = n => (n >= 2 ? 0.8 : 2) * K;
+const sizeLeft = n => BX + heroW(n) + 18;
+const BIT_LBL_X = k => STRIP.x + k * STRIP.pitch + 6;
+
+defineAnimation({
+  beats: 3,
+  alt: [
+    "A grid of small decimal numbers such as 0.12, minus 1.07 and 0.88 fades out at its edges as if it goes on forever, labeled: a model, billions of numbers.",
+    "The grid collapses into one block labeled gemma3:1b, 1 billion numbers, 2 GB, which drops onto a shelf labeled disk.",
+    "One number, 0.12, is shown with a strip of 16 bit squares that shrinks to 4, labeled: each number rounded to 4 bits, and the block shrinks from 2 GB to 0.8 GB.",
+    "To scale on the disk, the gemma3 family as bars: 1b is 0.8 GB, 4b is 3.4 GB, 12b is 8.2 GB and 27b is 17 GB, and a faded bar for gpt-oss:120b, 65 GB, runs off the right edge of the stage; the b counts billions of numbers.",
+  ],
+
+  render(n) {
+    css(grid, { opacity: n === 0 ? 1 : 0 });
+    cells.forEach(c => { c.el.style.transform = ""; });
+    css(lbl0, { opacity: n === 0 ? 1 : 0 });
+    css(disk, { opacity: n >= 1 ? 1 : 0, top: n >= 3 ? DISK_L.top : DISK_S.top, height: n >= 3 ? DISK_L.h : DISK_S.h });
+    css(hero, { opacity: n >= 1 ? 1 : 0, left: BX, top: n >= 3 ? rowY(0) : HERO_Y, width: heroW(n), height: n >= 3 ? ROW.h : HERO_H });
+    css(size, { opacity: n === 1 || n === 2 ? 1 : 0, left: sizeLeft(n), top: HERO_Y + 32 });
+    size.textContent = n >= 2 ? "0.8 GB" : "2 GB";
+    css(htxt, { opacity: n === 1 || n === 2 ? 1 : 0, top: HERO_Y + 22 });
+    css(card, { opacity: n === 2 ? 1 : 0 });
+    css(arrow, { opacity: n === 2 ? 1 : 0 });
+    bits.forEach((b, i) => css(b, { opacity: n === 2 && i < 4 ? 1 : 0 }));
+    css(bitsLbl, { opacity: n === 2 ? 1 : 0, left: BIT_LBL_X(n === 2 ? 4 : 16) });
+    bitsLbl.textContent = n === 2 ? "4 bits" : "16 bits";
+    css(lbl2, { opacity: n === 2 ? 1 : 0 });
+    rows.forEach((r, i) => {
+      css(r.tag, { opacity: n >= 3 ? 1 : 0 });
+      css(r.sz, { opacity: n >= 3 ? 1 : 0 });
+      if (r.bar) css(r.bar, { opacity: n >= 3 ? 1 : 0, width: r.w });
+    });
+    css(gTag, { opacity: n >= 3 ? 1 : 0 });
+    css(gBar, { opacity: n >= 3 ? 1 : 0, width: GHOST_W });
+    css(lbl3, { opacity: n >= 3 ? 1 : 0 });
+  },
+
+  enter(n, { animate, later }) {
+    const fade = (el, a, b, delay = 0, dur = 400) => animate(el, [{ opacity: a }, { opacity: b }], { delay, duration: dur });
+
+    if (n === 1) {
+      fade(lbl0, 1, 0, 0, 350);
+      cells.forEach(c => animate(c.el, [{ transform: "translate(0px, 0px) scale(1)" }, { transform: `translate(${c.dx}px, ${c.dy}px) scale(0.3)` }],
+        { duration: 800, delay: (1 - c.d / 1.5) * 250, easing: EASE.inOut }));
+      animate(grid, [{ opacity: 1, offset: 0 }, { opacity: 1, offset: 0.7 }, { opacity: 0, offset: 1 }], { duration: 1050 });
+      // the block forms where the numbers meet, glides over its landing spot, then drops onto the disk and settles
+      const x0 = COLLECT.x - 60 - BX, y0 = COLLECT.y - 60 - HERO_Y;
+      animate(hero, [
+        { opacity: 0, transform: `translate(${x0}px, ${y0}px) scale(0.5)`, offset: 0, easing: EASE.pop },
+        { opacity: 1, transform: `translate(${x0}px, ${y0}px) scale(1)`, offset: 0.14, easing: EASE.linear },
+        { opacity: 1, transform: `translate(${x0}px, ${y0}px) scale(1)`, offset: 0.25, easing: EASE.inOut },
+        { opacity: 1, transform: `translate(0px, ${y0}px)`, offset: 0.55, easing: "cubic-bezier(0.55, 0, 1, 0.6)" },
+        { opacity: 1, transform: "translate(0px, 0px)", offset: 0.82, easing: EASE.out },
+        { opacity: 1, transform: "translate(0px, -10px)", offset: 0.91, easing: EASE.inOut },
+        { opacity: 1, transform: "translate(0px, 0px)", offset: 1 },
+      ], { duration: 2500, delay: 600 });
+      animate(disk, [{ opacity: 0, transform: "translateY(24px)" }, { opacity: 1, transform: "translateY(0px)" }], { duration: 600, delay: 1500 });
+      fade(htxt, 0, 1, 3000, 500);
+      animate(size, [{ opacity: 0, transform: "scale(0.8)" }, { opacity: 1, transform: "scale(1)" }], { duration: 400, delay: 3000, easing: EASE.pop });
+    }
+
+    if (n === 2) {
+      fade(card, 0, 1, 0, 500); fade(arrow, 0, 1, 200, 400); fade(lbl2, 0, 1, 300, 500);
+      bits.forEach((b, i) => fade(b, 0, i < 4 ? 1 : 1, 200 + i * 35, 300));
+      fade(bitsLbl, 0, 1, 700, 300);
+      bitsLbl.textContent = "16 bits"; bitsLbl.style.left = BIT_LBL_X(16) + "px";
+      // the strip shrinks from 16 squares to 4 while the block shrinks from 2 GB to 0.8 GB
+      for (let i = 15; i >= 4; i--) animate(bits[i], [{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(0.3)" }], { duration: 300, delay: 1600 + (15 - i) * 60 });
+      animate(bitsLbl, [{ transform: "translateX(0px)" }, { transform: `translateX(${BIT_LBL_X(4) - BIT_LBL_X(16)}px)` }], { duration: 900, delay: 1600, easing: EASE.inOut });
+      later(2000, () => { bitsLbl.textContent = "4 bits"; });
+      animate(hero, [{ width: heroW(1) + "px" }, { width: heroW(2) + "px" }], { duration: 1000, delay: 1600, easing: EASE.inOut });
+      animate(size, [{ transform: `translateX(${heroW(1) - heroW(2)}px)` }, { transform: "translateX(0px)" }], { duration: 1000, delay: 1600, easing: EASE.inOut });
+      later(2100, () => { size.textContent = "0.8 GB"; });
+    }
+
+    if (n === 3) {
+      [card, arrow, lbl2, bitsLbl, htxt, size].forEach(el => fade(el, 1, 0, 0, 300));
+      bits.slice(0, 4).forEach(b => fade(b, 1, 0, 0, 300));
+      animate(disk, [{ top: DISK_S.top + "px", height: DISK_S.h + "px" }, { top: DISK_L.top + "px", height: DISK_L.h + "px" }], { duration: 800, delay: 200, easing: EASE.inOut });
+      animate(hero, [{ top: HERO_Y + "px", height: HERO_H + "px" }, { top: rowY(0) + "px", height: ROW.h + "px" }], { duration: 800, delay: 200, easing: EASE.inOut });
+      fade(rows[0].tag, 0, 1, 900, 300); fade(rows[0].sz, 0, 1, 900, 300);
+      rows.forEach((r, i) => {
+        if (!r.bar) return;
+        const d = 1000 + i * 250;
+        animate(r.bar, [{ opacity: 1, width: "0px" }, { opacity: 1, width: r.w + "px" }], { duration: 700, delay: d, easing: EASE.out });
+        fade(r.tag, 0, 1, d, 300); fade(r.sz, 0, 1, d + 600, 300);
+      });
+      const g = 1000 + 4 * 250;
+      fade(gTag, 0, 1, g, 300);
+      animate(gBar, [{ opacity: 1, width: "0px" }, { opacity: 1, width: GHOST_W + "px" }], { duration: 1200, delay: g, easing: EASE.inOut });
+      fade(lbl3, 0, 1, g + 1200, 500);
+    }
+  },
+});
+</script>
+</body>
+</html>

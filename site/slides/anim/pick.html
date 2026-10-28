@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your pick</title>
+<link rel="stylesheet" href="_shared/anim.css">
+<style>
+  /* A3b: your pick. The four gemma3 files to scale, the same scale as on the disk in fit.html: 62.5 px per GB (K in the script),
+     so 8 GB is 500 px and the 27b file (17 GB) is 1062 px. A dashed line marks today's 8 GB limit; three rules sit under it. */
+  .abs { position: absolute; margin: 0; }
+  .row { position: absolute; background: var(--model); border-radius: 10px; }
+  .rl  { position: absolute; margin: 0; white-space: nowrap; font: 800 24px/44px var(--mono); color: var(--paper); }
+  .rs  { position: absolute; margin: 0; white-space: nowrap; font: 700 24px/44px var(--font); color: var(--ink); }
+  .lim { position: absolute; margin: 0; white-space: nowrap; font: 800 26px/30px var(--font); color: var(--ink); }
+  .rule { position: absolute; top: 384px; width: 378px; height: 160px; padding: 20px 22px; border: 4px solid var(--line); border-radius: 24px; background: var(--paper); }
+  .rule b { display: block; margin-top: 16px; font: 800 30px/1.2 var(--font); color: var(--ink); }
+  .rule b small { display: block; font: 700 26px/1.25 var(--font); color: var(--muted); }
+  .ic { position: relative; height: 40px; }
+  .ic .bar { position: absolute; left: 0; top: 8px; width: 160px; height: 24px; border-radius: 8px; background: var(--idle); border: 3px solid var(--overhead); overflow: hidden; }
+  .ic .bar i { position: absolute; left: 0; top: 0; width: 50%; height: 100%; background: var(--model); }
+  .ic .gpu { position: absolute; left: 0; top: 2px; width: 100px; height: 36px; border-radius: 9px; background: var(--ok); }
+  .ic .gpu i { position: absolute; top: 6px; width: 24px; height: 24px; border-radius: 50%; border: 4px solid var(--paper); }
+  .ic .none { position: absolute; left: 0; top: 2px; width: 100px; height: 36px; border-radius: 9px; border: 4px dashed var(--overhead); }
+  .cmd { position: absolute; left: 48px; top: 584px; width: 760px; height: 96px; border-radius: 24px; background: var(--ink); color: var(--paper); font: 700 36px/96px var(--mono); padding-left: 32px; white-space: pre; opacity: 0; font-variant-ligatures: none; }
+  .cmd i { position: absolute; left: 538px; top: 24px; width: 190px; height: 48px; border: 4px dashed var(--red-soft); border-radius: 12px; }
+  .pill { position: absolute; left: 836px; top: 600px; height: 64px; padding: 0 28px; border-radius: 32px; background: var(--red); color: var(--paper); font: 800 28px/64px var(--font); white-space: nowrap; opacity: 0; }
+</style>
+</head>
+<body>
+<main id="stage" class="stage" role="img" aria-label="">
+  <h1 class="title">Your pick</h1>
+
+  <div id="layer" aria-hidden="true">
+    <svg class="art" viewBox="0 0 1280 720"><line id="limit" x1="578" x2="578" y1="116" y2="360" stroke="var(--ink)" stroke-width="4" stroke-dasharray="10 8"/></svg>
+    <p class="lim" style="left:594px; top:108px">today&rsquo;s limit</p>
+
+    <div class="rule" style="left:48px"><div class="ic"><div class="bar"><i></i></div></div><b>&le; half your memory</b></div>
+    <div class="rule" style="left:451px"><div class="ic"><div class="gpu"><i style="left:12px"></i><i style="left:58px"></i></div></div><b>NVIDIA card:<small>&le; its memory &minus; 1 GB</small></b></div>
+    <div class="rule" style="left:854px"><div class="ic"><div class="none"></div></div><b>no graphics card:<small>4b at most</small></b></div>
+
+    <p class="cmd" id="cmd">ollama pull gemma3:<i></i></p>
+    <p class="pill" id="pill">poll: which did you pick?</p>
+  </div>
+</main>
+
+<script src="_shared/anim.js"></script>
+<script>
+"use strict";
+const { html, EASE } = Anim;
+const layer = document.getElementById("layer");
+
+// ---- geometry (stage pixels). One scale: K px per GB, the same as the disk in fit.html. ------------------------------------
+const K = 62.5, X0 = 78;
+const MODELS = [["gemma3:1b", 0.8, "0.8 GB"], ["gemma3:4b", 3.4, "3.4 GB"], ["gemma3:12b", 8.2, "8.2 GB"], ["gemma3:27b", 17, "17 GB"]];
+MODELS.forEach(([tag, gb, sz], i) => {
+  const y = 150 + i * 56, w = gb * K, wide = w > 200;
+  html("div", { class: "row", style: { left: X0 + "px", top: y + "px", width: w + "px", height: "44px" } }, layer);
+  html("p", { class: "rl", text: tag, style: { left: wide ? X0 + 14 + "px" : X0 + w + 14 + "px", top: y + "px", color: wide ? "" : "var(--ink)" } }, layer);
+  const last = i === 3;
+  html("p", { class: "rs", text: sz, style: { left: last ? X0 + w - 84 + "px" : X0 + w + (wide ? 14 : 174) + "px", top: y + "px", color: last ? "var(--paper)" : "" } }, layer);
+});
+
+const cmd = document.getElementById("cmd"), pill = document.getElementById("pill");
+
+defineAnimation({
+  beats: 1,
+  alt: [
+    "The four gemma3 files drawn to scale, 1b at 0.8 GB, 4b at 3.4 GB, 12b at 8.2 GB and 27b at 17 GB, with a dashed line at 8 GB marked today's limit, and three rule cards: at most half your memory; NVIDIA card, at most its memory minus 1 GB; no graphics card, 4b at most.",
+    "A command card appears reading ollama pull gemma3: followed by a blank to fill in, and a tag reads: poll, which did you pick?",
+  ],
+  render(n) {
+    for (const el of [cmd, pill]) { el.style.opacity = n >= 1 ? 1 : 0; el.style.transform = ""; }
+  },
+  enter(n, { animate }) {
+    const rise = [{ opacity: 0, transform: "translateY(24px)" }, { opacity: 1, transform: "translateY(0px)" }];
+    animate(cmd, rise, { duration: 700 });
+    animate(pill, [{ opacity: 0, transform: "scale(0.8)" }, { opacity: 1, transform: "scale(1)" }], { duration: 450, delay: 800, easing: EASE.pop });
+  },
+});
+</script>
+</body>
+</html>

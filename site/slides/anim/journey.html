@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where your words go</title>
+<link rel="stylesheet" href="_shared/anim.css">
+<style>
+  /* A1: where your words go. Your computer (left) and someone else's (right). The dashed edge is the network.
+     Scale of this page: memory is 16 GB at 32 px per GB (the bar is 516 px wide), so a model block is 32 px per GB wide. */
+  .edge     { fill: none; stroke: var(--overhead); stroke-width: 4; stroke-dasharray: 14 12; }
+  .flash    { fill: none; stroke: var(--warn); stroke-width: 8; stroke-dasharray: 14 12; opacity: 0; }
+  .computer { fill: var(--paper); stroke: var(--ink); stroke-width: 5; }
+  .t-comp   { font: 600 22px var(--font); fill: var(--muted); }
+  .t-dc     { font: 800 26px var(--font); fill: var(--ink); text-anchor: middle; }
+  .mem-bar  { fill: var(--idle); }
+  .seg-sys  { fill: var(--overhead); }
+  .seg-mod  { fill: var(--model); }
+  .t-seg    { font: 700 20px var(--font); fill: var(--paper); }
+  .t-tag    { font: 800 22px var(--mono); fill: var(--paper); text-anchor: middle; }
+  .t-size   { font: 700 20px var(--font); fill: var(--paper); text-anchor: middle; }
+  .chip-ink .b { fill: var(--ink); }
+  .chip-red .b { fill: var(--red); }
+  .chip-die { fill: none; stroke: var(--paper); stroke-width: 4; opacity: .4; }
+  .chip-dot { fill: var(--paper); opacity: .5; }
+  .bub-q    { fill: var(--red); }
+  .bub-a    { fill: var(--paper); stroke: var(--ink); stroke-width: 4; stroke-linejoin: round; }
+  .t-bq     { font: 700 22px var(--font); fill: var(--paper); text-anchor: middle; }
+  .t-ba     { font: 700 22px var(--font); fill: var(--ink); text-anchor: middle; }
+  .tile     { fill: var(--red); }
+  .rack     { fill: var(--paper); stroke: var(--ink); stroke-width: 4; }
+  .slot     { fill: var(--idle); }
+  .led      { fill: var(--overhead); }
+  .badge-m  { fill: var(--model); }
+  .t-badge  { font: 800 22px var(--mono); fill: var(--paper); text-anchor: middle; }
+  .meter    { fill: var(--ink); }
+  .coin     { fill: var(--hunt); }
+  .t-coin   { font: 800 28px var(--font); fill: var(--ink); text-anchor: middle; }
+  .t-meter  { font: 800 32px var(--mono); fill: var(--paper); }
+  .card     { fill: var(--paper); stroke: var(--line); stroke-width: 4; }
+  .disc     { fill: var(--ok); }
+  .ico      { fill: var(--paper); stroke: var(--paper); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+  .ico-n    { fill: none; }
+  .t-card   { font: 800 26px var(--font); fill: var(--ink); }
+  .note     { fill: var(--paper); stroke: var(--overhead); stroke-width: 5; stroke-dasharray: 16 11; }
+  .t-note   { font: 800 32px var(--font); fill: var(--ink); }
+  .t-note2  { font: 600 24px var(--font); fill: var(--muted); }
+</style>
+</head>
+<body>
+<main id="stage" class="stage" role="img" aria-label="">
+  <h1 class="title">Where your words go</h1>
+  <svg class="art" id="art" viewBox="0 0 1280 720" aria-hidden="true"></svg>
+</main>
+
+<script src="_shared/anim.js"></script>
+<script>
+"use strict";
+const { svg, EASE, tok } = Anim;
+const art = document.getElementById("art");
+
+// ---- geometry (stage px) ------------------------------------------------------------------------------------------
+const COMP = { x: 48, y: 128, w: 728, h: 356 };
+const EDGE = { x: COMP.x - 24, y: COMP.y - 24, w: COMP.w + 48, h: COMP.h + 48, r: 52 };
+const EDGE_R = EDGE.x + EDGE.w;                                  // the right side of the edge: where words cross
+const LANE = 226, SPOT = { x: 180, y: LANE };                    // the words' road; where your bubble sits and the answer lands
+const CHIP = { x: 150, y: 380 };
+const GB = 32, MEM = { x: 248, y: 344, w: 16 * GB + 4, h: 72 };
+const RACK = { x: 1010, y: 191, w: 68, h: 200, gap: 9 };
+const RCX = RACK.x + (3 * RACK.w + 2 * RACK.gap) / 2;            // the racks' middle
+const P = (x, y, s = 1) => `translate(${x}px, ${y}px) scale(${s})`;
+const put = (el, o, tf) => { el.style.opacity = o; el.style.transform = tf == null ? "" : tf; };
+
+// ---- the computer and its edge ---------------------------------------------------------------------------------------
+svg("rect", { class: "edge", x: EDGE.x, y: EDGE.y, width: EDGE.w, height: EDGE.h, rx: EDGE.r }, art);
+// the part of the edge that flashes: the same dashes, drawn over the right side. The dash phase follows the rect's own path.
+const s0 = (EDGE.w - 2 * EDGE.r) + Math.PI * EDGE.r / 2;
+const FY0 = 170, FY1 = 282;
+const flash = svg("path", { class: "flash", d: `M${EDGE_R},${FY0} V${FY1}`, style: { strokeDashoffset: (s0 + FY0 - EDGE.y - EDGE.r) % 26 } }, art);
+svg("rect", { class: "computer", x: COMP.x, y: COMP.y, width: COMP.w, height: COMP.h, rx: 28 }, art);
+svg("text", { class: "t-comp", x: COMP.x + 28, y: COMP.y + 36, text: "your computer" }, art);
+
+// memory: the bar, 5 GB of system + apps, the loaded model, free space
+svg("text", { class: "t-comp", x: MEM.x, y: MEM.y - 10, text: "memory · 16 GB" }, art);
+svg("rect", { class: "mem-bar", x: MEM.x, y: MEM.y, width: MEM.w, height: MEM.h, rx: 14 }, art);
+const x0 = MEM.x + 2, sy = MEM.y + 2, sh = MEM.h - 4;
+svg("rect", { class: "seg-sys", x: x0, y: sy, width: 5 * GB - 1.5, height: sh, rx: 12 }, art);
+svg("text", { class: "t-seg", x: x0 + 8, y: sy + sh / 2 + 7, text: "system + apps" }, art);
+const MODEL_W = 4.5 * GB - 3, MODEL_X = x0 + 5 * GB + 1.5;       // gemma3:4b, about 4.5 GB in memory
+svg("rect", { class: "seg-mod", x: MODEL_X, y: sy, width: MODEL_W, height: sh, rx: 12 }, art);
+svg("text", { class: "t-tag", x: MODEL_X + MODEL_W / 2, y: sy + sh / 2 - 3, text: "gemma3:4b" }, art);
+svg("text", { class: "t-size", x: MODEL_X + MODEL_W / 2, y: sy + sh / 2 + 21, text: "≈ 4.5 GB" }, art);
+
+// the chip: 120 px, rx 18, pins on all four sides; ink while idle, red while it generates
+const gChip = svg("g", { transform: `translate(${CHIP.x} ${CHIP.y})` }, art);
+function chipLayer(cls) {
+  const l = svg("g", { class: cls }, gChip);
+  for (let i = 0; i < 5; i++) {
+    const k = -60 + 16 + 19 * i;
+    svg("rect", { class: "b", x: k, y: -74, width: 12, height: 22, rx: 4 }, l);
+    svg("rect", { class: "b", x: k, y: 52, width: 12, height: 22, rx: 4 }, l);
+    svg("rect", { class: "b", x: -74, y: k, width: 22, height: 12, rx: 4 }, l);
+    svg("rect", { class: "b", x: 52, y: k, width: 22, height: 12, rx: 4 }, l);
+  }
+  svg("rect", { class: "b", x: -60, y: -60, width: 120, height: 120, rx: 18 }, l);
+  return l;
+}
+chipLayer("chip-ink");
+const chipRed = chipLayer("chip-red");
+svg("rect", { class: "chip-die", x: -26, y: -26, width: 52, height: 52, rx: 10 }, gChip);
+svg("circle", { class: "chip-dot", cx: -44, cy: -44, r: 5 }, gChip);
+
+// ---- someone else's computer ----------------------------------------------------------------------------------------
+const dc = svg("g", {}, art);
+for (let i = 0; i < 3; i++) {
+  const rx = RACK.x + i * (RACK.w + RACK.gap);
+  svg("rect", { class: "rack", x: rx, y: RACK.y, width: RACK.w, height: RACK.h, rx: 12 }, dc);
+  for (let j = 0; j < 4; j++) svg("rect", { class: "slot", x: rx + 10, y: RACK.y + 20 + j * 32, width: RACK.w - 20, height: 16, rx: 5 }, dc);
+  svg("circle", { class: "led", cx: rx + RACK.w / 2, cy: RACK.y + RACK.h - 24, r: 5 }, dc);
+}
+const dcLabel = svg("text", { class: "t-dc", x: RCX, y: RACK.y + RACK.h + 44 }, dc);
+svg("tspan", { x: RCX, text: "someone else's" }, dcLabel);
+svg("tspan", { x: RCX, dy: 32, text: "computer" }, dcLabel);
+// the model badge, v1 then v2
+svg("rect", { class: "badge-m", x: RCX - 72, y: 145, width: 144, height: 38, rx: 12 }, dc);
+const v1 = svg("g", { class: "fb" }, dc), v2 = svg("g", { class: "fb" }, dc);
+svg("text", { class: "t-badge", x: RCX, y: 172, text: "model v1" }, v1);
+svg("text", { class: "t-badge", x: RCX, y: 172, text: "model v2" }, v2);
+// the meter
+const meter = svg("g", { class: "fb" }, dc);
+svg("rect", { class: "meter", x: 818, y: 300, width: 172, height: 72, rx: 16 }, meter);
+svg("circle", { class: "coin", cx: 850, cy: 336, r: 22 }, meter);
+svg("text", { class: "t-coin", x: 850, y: 346, text: "$" }, meter);
+const meterTxt = svg("text", { class: "t-meter", x: 884, y: 347, text: "0.00" }, meter);
+
+// ---- bubbles (drawn around their own middle; placed with CSS transforms) -------------------------------------------------
+function bubble(parent, o) {
+  const g = svg("g", {}, parent), r = o.r || 18, t = o.t || 16, tx = o.tx || 26;
+  const L = -o.w / 2, T = -o.h / 2, R = o.w / 2, B = o.h / 2;
+  const d = `M${L + r},${T} H${R - r} A${r},${r} 0 0 1 ${R},${T + r} V${B - r} A${r},${r} 0 0 1 ${R - r},${B} H${L + tx + 28} L${L + tx - 4},${B + t} L${L + tx},${B} H${L + r} A${r},${r} 0 0 1 ${L},${B - r} V${T + r} A${r},${r} 0 0 1 ${L + r},${T} Z`;
+  svg("path", { class: o.q ? "bub-q" : "bub-a", d }, g);
+  (o.lines || []).forEach((s, i, a) => svg("text", { class: o.q ? "t-bq" : "t-ba", x: 0, y: (i - (a.length - 1) / 2) * 28 + 8, text: s }, g));
+  return g;
+}
+const gQ = bubble(art, { w: 208, h: 84, q: true, lines: ["Summarize my", "interview notes"] });
+const gA = bubble(art, { w: 172, h: 84, lines: ["Here is your", "summary…"] });
+const miniQ = bubble(dc, { w: 60, h: 40, r: 12, t: 11, tx: 12, q: true });
+const tiles = [44, 56, 36, 50, 40].map(w => svg("rect", { class: "tile", x: -w / 2, y: -11, width: w, height: 22, rx: 6 }, art));
+
+// ---- beat 3: three badges; beat 4: a note ---------------------------------------------------------------------------------
+const cards = [0, 1, 2].map(i => {
+  const x = 52 + i * 400, y = 548, g = svg("g", {}, art);
+  svg("rect", { class: "card", x, y, width: 376, height: 100, rx: 24 }, g);
+  svg("circle", { class: "disc", cx: x + 58, cy: y + 50, r: 32 }, g);
+  const c = svg("g", { transform: `translate(${x + 58} ${y + 50})` }, g);
+  const t = svg("text", { class: "t-card", x: x + 108, y: y + 50 }, g);
+  if (i === 0) {                                                  // a lock
+    svg("rect", { class: "ico", x: -13, y: -2, width: 26, height: 20, rx: 4 }, c);
+    svg("path", { class: "ico ico-n", d: "M-8,-2 V-8 a8,8 0 0 1 16,0 V-2" }, c);
+    svg("tspan", { x: x + 108, dy: -4, text: "stays on" }, t); svg("tspan", { x: x + 108, dy: 32, text: "your computer" }, t);
+  } else if (i === 1) {
+    svg("text", { class: "t-coin", style: { fill: "var(--paper)", fontSize: "38px" }, x: 0, y: 13, text: "$" }, c);
+    svg("tspan", { x: x + 108, dy: 9, text: "$0 per use" }, t);
+  } else {                                                        // a pin
+    const p = svg("g", { transform: "rotate(35)" }, c);
+    svg("circle", { class: "ico", cx: 0, cy: -12, r: 7 }, p);
+    svg("rect", { class: "ico", x: -12, y: -5, width: 24, height: 5, rx: 2.5 }, p);
+    svg("path", { class: "ico ico-n", d: "M0,0 V15" }, p);
+    svg("tspan", { x: x + 108, dy: -4, text: "same model" }, t); svg("tspan", { x: x + 108, dy: 32, text: "every time" }, t);
+  }
+  return g;
+});
+const note = svg("g", {}, art);
+svg("rect", { class: "note", x: 842, y: 216, width: 390, height: 184, rx: 24 }, note);
+svg("text", { class: "t-note", x: 868, y: 268, text: "your data's rules" }, note);
+svg("text", { class: "t-note", x: 868, y: 308, text: "still apply" }, note);
+svg("text", { class: "t-note2", x: 868, y: 362, text: "(IRB, data classification)" }, note);
+
+// ---- states --------------------------------------------------------------------------------------------------------------
+const TICK = ["0.00", "0.01", "0.02", "0.03"];
+const DOCK = { x: RCX, y: LANE };
+const DIM = 0.28;
+
+function kfs(frames, total) {                                       // frames at absolute ms -> keyframes with offsets
+  const f = frames.slice();
+  if (f[0].t > 0) f.unshift({ ...f[0], t: 0 });
+  if (f[f.length - 1].t < total) f.push({ ...f[f.length - 1], t: total });
+  return f.map(k => ({ opacity: k.o, transform: P(k.x, k.y, k.s), offset: k.t / total, easing: k.ease || EASE.inOut }));
+}
+const tileStart = i => ({ x: CHIP.x - 24 + i * 12, y: CHIP.y - 74 });
+const tileEnd = i => ({ x: SPOT.x - 40 + i * 20, y: SPOT.y + 10 - (i % 2) * 14 });
+
+defineAnimation({
+  beats: 4,
+  alt: [
+    "Your computer, drawn as a box with a dashed network edge, holds a model in memory and a chip, and a red speech bubble inside it says Summarize my interview notes; on the right, labeled someone else's computer, stands a data center of three server racks.",
+    "On the cloud path the bubble leaves your computer, the stretch of the edge it crosses flashes orange, and it reaches the data center, where a dollar meter ticks up and the model badge flips from v1 to v2, and an answer bubble comes back.",
+    "On the local path the data center dims, the same bubble goes to the chip inside your computer, and the answer appears inside, with the edge staying whole.",
+    "Three badges appear under the computer: a lock, stays on your computer; $0 per use; and a pin, same model every time.",
+    "One dashed note card says your data's rules still apply, such as IRB and data classification.",
+  ],
+
+  render(n) {
+    put(gQ, n === 0 ? 1 : 0, P(SPOT.x, SPOT.y));
+    put(gA, n >= 1 ? 1 : 0, P(SPOT.x, SPOT.y));
+    put(miniQ, n >= 1 ? 1 : 0, P(DOCK.x, DOCK.y));
+    put(chipRed, 0);
+    put(flash, 0);
+    tiles.forEach(t => put(t, 0, P(0, 0)));
+    put(dc, n < 2 ? 1 : n < 4 ? DIM : 0);
+    put(meter, n >= 1 ? 1 : 0);
+    meterTxt.textContent = TICK[n >= 1 ? 3 : 0];
+    put(v1, n < 1 ? 1 : 0, n < 1 ? "" : "scaleY(0)");
+    put(v2, n >= 1 ? 1 : 0, n >= 1 ? "" : "scaleY(0)");
+    cards.forEach(c => put(c, n >= 3 ? 1 : 0));
+    put(note, n >= 4 ? 1 : 0);
+  },
+
+  enter(n, { animate, later }) {
+    const rise = (el, delay) => animate(el, [{ opacity: 0, transform: "translateY(18px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 450, delay });
+    if (n === 1) {                                                  // the cloud path
+      animate(gQ, kfs([
+        { t: 0, o: 1, x: SPOT.x, y: LANE, s: 1 },
+        { t: 1000, o: 1, x: 690, y: LANE, s: 1, ease: EASE.out },
+        { t: 1900, o: 1, x: 900, y: LANE, s: 1 },
+        { t: 2400, o: 0, x: DOCK.x, y: LANE, s: 0.3 },
+      ], 2400), { duration: 2400, easing: EASE.linear });
+      animate(miniQ, [{ opacity: 0 }, { opacity: 0, offset: 0.9 }, { opacity: 1 }], { duration: 2500, easing: EASE.linear });
+      const fl = [{ opacity: 0, offset: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.6 }, { opacity: 0, offset: 1 }];
+      animate(flash, fl, { duration: 900, delay: 1000 });
+      animate(flash, fl, { duration: 800, delay: 4700 });
+      animate(meter, [{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 2400 });
+      [1, 2, 3].forEach((k, i) => {
+        later(2800 + i * 380, () => { meterTxt.textContent = TICK[k]; });
+        animate(meter, [{ transform: "scale(1)" }, { transform: "scale(1.07)" }, { transform: "scale(1)" }], { duration: 300, delay: 2800 + i * 380 });
+      });
+      animate(v1, [{ opacity: 1, transform: "scaleY(1)" }, { opacity: 0, transform: "scaleY(0)" }], { duration: 250, delay: 4000 });
+      animate(v2, [{ opacity: 0, transform: "scaleY(0)" }, { opacity: 1, transform: "scaleY(1)" }], { duration: 250, delay: 4250 });
+      animate(gA, kfs([
+        { t: 0, o: 0, x: 1060, y: LANE, s: 0.4 },
+        { t: 4500, o: 0, x: 1060, y: LANE, s: 0.4 },
+        { t: 4800, o: 1, x: 940, y: LANE, s: 0.6 },
+        { t: 5400, o: 1, x: 690, y: LANE, s: 0.95 },
+        { t: 6100, o: 1, x: SPOT.x, y: LANE, s: 1, ease: EASE.out },
+      ], 6100), { duration: 6100, easing: EASE.linear });
+    }
+
+    if (n === 2) {                                                  // the local path
+      animate(dc, [{ opacity: 1 }, { opacity: DIM }], { duration: 600 });
+      animate(gA, [{ opacity: 1, transform: P(SPOT.x, LANE) }, { opacity: 0, transform: P(SPOT.x, LANE) }, { opacity: 0, transform: P(SPOT.x, LANE), offset: 0.6 }, { opacity: 1, transform: P(SPOT.x, LANE) }], { duration: 3600, easing: EASE.linear });
+      animate(gQ, kfs([
+        { t: 0, o: 0, x: SPOT.x, y: LANE, s: 0.85 },
+        { t: 500, o: 0, x: SPOT.x, y: LANE, s: 0.85 },
+        { t: 900, o: 1, x: SPOT.x, y: LANE, s: 1, ease: EASE.pop },
+        { t: 1500, o: 1, x: SPOT.x, y: LANE, s: 1, ease: EASE.inOut },
+        { t: 2100, o: 1, x: CHIP.x, y: CHIP.y - 60, s: 0.45 },
+        { t: 2300, o: 0, x: CHIP.x, y: CHIP.y, s: 0.3 },
+      ], 2300), { duration: 2300, easing: EASE.linear });
+      animate(chipRed, [{ opacity: 0 }, { opacity: 0, offset: 0.4 }, { opacity: 1, offset: 0.46 }, { opacity: 1, offset: 0.9 }, { opacity: 0 }], { duration: 5000, easing: EASE.linear });
+      tiles.forEach((t, i) => {
+        const a = tileStart(i), b = tileEnd(i);
+        animate(t, [
+          { opacity: 0, transform: P(a.x, a.y), offset: 0 },
+          { opacity: 1, transform: P(a.x, a.y), offset: 0.15 },
+          { opacity: 1, transform: P(b.x, b.y), offset: 0.85 },
+          { opacity: 0, transform: P(b.x, b.y), offset: 1 },
+        ], { duration: 800, delay: 2400 + i * 260, easing: EASE.inOut });
+      });
+    }
+
+    if (n === 3) cards.forEach((c, i) => rise(c, i * 380));
+
+    if (n === 4) {
+      animate(dc, [{ opacity: DIM }, { opacity: 0 }], { duration: 500 });
+      animate(note, [{ opacity: 0, transform: "translateX(40px)" }, { opacity: 1, transform: "translateX(0)" }], { duration: 600, delay: 300 });
+    }
+  },
+});
+</script>
+</body>
+</html>

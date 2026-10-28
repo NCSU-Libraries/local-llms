@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One server, three windows</title>
+<link rel="stylesheet" href="_shared/anim.css">
+<style>
+  /* A5: under the hood. Three windows talk to one server; the server loads the model and hands work to the chip.
+     Scale of this page: memory is 16 GB at 32.5 px per GB (the bar is 524 px wide); a model block is 32.5 px per GB wide. */
+  .edge     { fill: none; stroke: var(--overhead); stroke-width: 4; stroke-dasharray: 14 12; }
+  .flash    { fill: none; stroke: var(--warn); stroke-width: 8; stroke-dasharray: 14 12; opacity: 0; }
+  .computer { fill: var(--paper); stroke: var(--ink); stroke-width: 5; }
+  .t-comp   { font: 600 22px var(--font); fill: var(--muted); }
+  .win      { fill: var(--paper); stroke: var(--ink); stroke-width: 4; }
+  .bar      { fill: var(--idle); }
+  .t-win    { font: 800 22px var(--font); fill: var(--ink); }
+  .dot      { fill: var(--overhead); }
+  .codebox  { fill: var(--ink); }
+  .t-code   { font: 700 20px var(--mono); fill: var(--paper); }
+  .server   { fill: var(--paper); stroke: var(--ink); stroke-width: 5; }
+  .t-srv    { font: 800 34px var(--font); fill: var(--ink); text-anchor: middle; }
+  .t-srv2   { font: 700 20px var(--mono); fill: var(--muted); text-anchor: middle; }
+  .slot     { fill: var(--idle); }
+  .port-d   { fill: var(--overhead); }
+  .port-l   { fill: var(--ink); }
+  .pipe-o   { fill: none; stroke: var(--overhead); stroke-width: 20; stroke-linejoin: round; stroke-dasharray: 1; }
+  .pipe-i   { fill: none; stroke: var(--paper); stroke-width: 12; stroke-linejoin: round; stroke-dasharray: 1; }
+  .pipe-w   { stroke: var(--warn); }
+  .mem-bar  { fill: var(--idle); }
+  .seg-sys  { fill: var(--overhead); }
+  .seg-mod  { fill: var(--model); }
+  .t-seg    { font: 700 20px var(--font); fill: var(--paper); }
+  .t-tag    { font: 800 22px var(--mono); fill: var(--paper); text-anchor: middle; }
+  .t-size   { font: 700 20px var(--font); fill: var(--paper); text-anchor: middle; }
+  .t-lbl    { font: 700 20px var(--mono); text-anchor: middle; }
+  .plank    { fill: var(--ink); }
+  .chip-ink .b { fill: var(--ink); }
+  .chip-red .b { fill: var(--red); }
+  .chip-die { fill: none; stroke: var(--paper); stroke-width: 4; opacity: .4; }
+  .chip-dot { fill: var(--paper); opacity: .5; }
+  .bub-q    { fill: var(--red); }
+  .bub-w    { fill: var(--warn); }
+  .bub-a    { fill: var(--paper); stroke: var(--ink); stroke-width: 4; stroke-linejoin: round; }
+  .t-bq     { font: 700 20px var(--font); fill: var(--paper); text-anchor: middle; }
+  .t-ba     { font: 700 20px var(--font); fill: var(--ink); text-anchor: middle; }
+  .t-bl     { font: 700 22px var(--font); fill: var(--ink); text-anchor: middle; }
+  .tile     { fill: var(--red); }
+  .pill     { fill: var(--idle); stroke: var(--overhead); stroke-width: 4; }
+  .t-pill   { font: 800 24px var(--mono); fill: var(--ink); text-anchor: middle; }
+  .tag-c    { fill: var(--warn); }
+  .t-tagc   { font: 800 22px var(--mono); fill: var(--paper); text-anchor: middle; }
+  .sw       { fill: var(--paper); stroke: var(--line); stroke-width: 3; }
+  .t-sw     { font: 700 20px var(--font); fill: var(--ink); }
+  .trk-on   { fill: var(--warn); }
+  .trk-off  { fill: var(--overhead); }
+  .knob     { fill: var(--paper); }
+  .t-warn   { font: 800 22px var(--font); fill: var(--warn); text-anchor: middle; }
+  .t-dl     { font: 700 22px var(--font); fill: var(--muted); text-anchor: middle; }
+  .cap      { font: 800 32px var(--font); fill: var(--ink); }
+  .badge    { fill: var(--model); }
+  .t-badge  { font: 700 20px var(--mono); fill: var(--paper); }
+  .seed     { fill: var(--paper); stroke: var(--ink); stroke-width: 4; }
+  .t-seed   { font: 800 22px var(--mono); fill: var(--ink); text-anchor: middle; }
+  .link     { stroke: var(--ink); stroke-width: 4; }
+  .t-eq     { font: 800 48px var(--font); fill: var(--ink); text-anchor: middle; }
+  .t-run    { font: 600 22px var(--font); fill: var(--muted); text-anchor: middle; }
+</style>
+</head>
+<body>
+<main id="stage" class="stage" role="img" aria-label="">
+  <h1 class="title">One server, three windows</h1>
+  <svg class="art" id="art" viewBox="0 0 1280 720" aria-hidden="true"></svg>
+</main>
+
+<script src="_shared/anim.js"></script>
+<script>
+"use strict";
+const { svg, EASE, tok } = Anim;
+const art = document.getElementById("art");
+const P = (x, y, s = 1) => `translate(${x}px, ${y}px) scale(${s})`;
+const put = (el, o, tf) => { el.style.opacity = o; el.style.transform = tf == null ? "" : tf; };
+const grp = (parent, cls) => svg("g", cls ? { class: cls } : {}, parent);
+
+// ---- geometry (stage px) ------------------------------------------------------------------------------------------
+const EDGE = { x: 24, y: 160, w: 1232, h: 504, r: 52 };
+const COMP = { x: 48, y: 184, w: 1184, h: 456 };
+const WIN = [{ x: 76, y: 232, w: 280, h: 160, t: "Ollama app" }, { x: 76, y: 408, w: 280, h: 92, t: "Terminal", code: "ollama run gemma3:1b" }, { x: 76, y: 516, w: 280, h: 92, t: "Python", code: "ollama.chat(…)" }];
+const PY = WIN.map(w => w.y + (w.h > 100 ? 80 : 46));              // pipe heights: 312, 454, 562
+PY[0] = 312;
+const SRV = { x: 412, y: 232, w: 210, h: 376 };
+const CHIP = { x: 862, y: 292 };
+const CY = 292;                                                  // the server-to-chip pipe
+const GB = 32.5, MEM = { x: 678, y: 416, w: 16 * GB + 4, h: 72 };
+const MODEL_X = MEM.x + 2 + 5 * GB + 1.5, MODEL_W = 1.2 * GB - 3, MC = MODEL_X + MODEL_W / 2;     // gemma3:1b, 1.2 GB in memory
+const DISK_Y = 596, DISK_W = 0.8 * GB;                           // 0.8 GB download
+const RUN = 118, DL = { x: 1110, y: DISK_Y - 28 };
+
+// ---- the computer and its edge --------------------------------------------------------------------------------------
+svg("rect", { class: "edge", x: EDGE.x, y: EDGE.y, width: EDGE.w, height: EDGE.h, rx: EDGE.r }, art);
+const flash = svg("path", { class: "flash", d: "M500,160 H612", style: { strokeDashoffset: (500 - (EDGE.x + EDGE.r)) % 26 } }, art);
+svg("rect", { class: "computer", x: COMP.x, y: COMP.y, width: COMP.w, height: COMP.h, rx: 28 }, art);
+svg("text", { class: "t-comp", x: COMP.x + 28, y: COMP.y + 36, text: "your computer" }, art);
+
+// ---- bubbles and the chip (same drawing as journey.html) ----------------------------------------------------------------
+function bubble(parent, o) {
+  const g = svg("g", {}, parent), r = o.r || 18, t = o.t || 16, tx = o.tx || 26;
+  const L = -o.w / 2, T = -o.h / 2, R = o.w / 2, B = o.h / 2;
+  const d = `M${L + r},${T} H${R - r} A${r},${r} 0 0 1 ${R},${T + r} V${B - r} A${r},${r} 0 0 1 ${R - r},${B} H${L + tx + 28} L${L + tx - 4},${B + t} L${L + tx},${B} H${L + r} A${r},${r} 0 0 1 ${L},${B - r} V${T + r} A${r},${r} 0 0 1 ${L + r},${T} Z`;
+  svg("path", { class: o.k === "q" ? "bub-q" : o.k === "w" ? "bub-w" : "bub-a", d }, g);
+  (o.lines || []).forEach((s, i, a) => svg("text", { class: o.k === "q" ? "t-bq" : o.cls || "t-ba", x: 0, y: (i - (a.length - 1) / 2) * 28 + 7, text: s }, g));
+  return g;
+}
+function chipLayer(parent, cls) {
+  const l = svg("g", { class: cls }, parent);
+  for (let i = 0; i < 5; i++) {
+    const k = -60 + 16 + 19 * i;
+    svg("rect", { class: "b", x: k, y: -74, width: 12, height: 22, rx: 4 }, l);
+    svg("rect", { class: "b", x: k, y: 52, width: 12, height: 22, rx: 4 }, l);
+    svg("rect", { class: "b", x: -74, y: k, width: 22, height: 12, rx: 4 }, l);
+    svg("rect", { class: "b", x: 52, y: k, width: 22, height: 12, rx: 4 }, l);
+  }
+  svg("rect", { class: "b", x: -60, y: -60, width: 120, height: 120, rx: 18 }, l);
+  return l;
+}
+
+// ---- left: three windows and their pipes -----------------------------------------------------------------------------
+const gLeft = grp(art);
+const gPipes = grp(gLeft);
+const pipes = PY.map((y, i) => [svg("path", { class: "pipe-o", d: `M356,${y} H412`, pathLength: 1 }, gPipes), svg("path", { class: "pipe-i", d: `M356,${y} H412`, pathLength: 1 }, gPipes)]);
+const wins = WIN.map(w => {
+  const g = grp(gLeft);
+  svg("rect", { class: "bar", x: w.x + 2, y: w.y + 2, width: w.w - 4, height: 40, rx: 14 }, g);
+  svg("rect", { class: "bar", x: w.x + 2, y: w.y + 24, width: w.w - 4, height: 18 }, g);
+  svg("rect", { class: "win", x: w.x, y: w.y, width: w.w, height: w.h, rx: 18, style: { fill: "none" } }, g);
+  svg("text", { class: "t-win", x: w.x + 16, y: w.y + 29, text: w.t }, g);
+  [0, 1, 2].forEach(k => svg("circle", { class: "dot", cx: w.x + w.w - 56 + k * 20, cy: w.y + 21, r: 6 }, g));
+  if (w.code) {
+    svg("rect", { class: "codebox", x: w.x + 12, y: w.y + 50, width: w.w - 24, height: 32, rx: 10 }, g);
+    svg("text", { class: "t-code", x: w.x + 22, y: w.y + 73, text: w.code }, g);
+  }
+  return g;
+});
+const chatQ = bubble(wins[0], { w: 236, h: 40, r: 14, t: 9, tx: 190, k: "q", lines: ["Why is the sky blue?"] });
+const chatA = bubble(wins[0], { w: 214, h: 40, r: 14, t: 9, tx: 16, lines: ["Sunlight scatters…"] });
+put(chatQ, 1, P(222, 300));
+
+// ---- the server --------------------------------------------------------------------------------------------------------
+const gSrv = grp(art);
+const srvBox = svg("rect", { class: "server", x: SRV.x, y: SRV.y, width: SRV.w, height: SRV.h, rx: 24 }, gSrv);
+[0, 1, 2].forEach(k => { svg("rect", { class: "slot", x: SRV.x + 36, y: SRV.y + 26 + k * 28, width: 138, height: 16, rx: 7 }, gSrv); svg("rect", { class: "slot", x: SRV.x + 36, y: SRV.y + SRV.h - 90 + k * 28, width: 138, height: 16, rx: 7 }, gSrv); });
+svg("text", { class: "t-srv", x: SRV.x + SRV.w / 2, y: 408, text: "Ollama" }, gSrv);
+svg("text", { class: "t-srv2", x: SRV.x + SRV.w / 2, y: 442, text: "localhost:11434" }, gSrv);
+const portD = PY.map(y => svg("circle", { class: "port-d", cx: SRV.x, cy: y, r: 11 }, gSrv));
+const portL = PY.map(y => svg("circle", { class: "port-l", cx: SRV.x, cy: y, r: 11 }, gSrv));
+svg("circle", { class: "port-l", cx: SRV.x + SRV.w, cy: CY, r: 11 }, gSrv);
+const chipPipe = grp(art);
+svg("path", { class: "pipe-o", d: `M${SRV.x + SRV.w},${CY} H800`, style: { strokeDasharray: "none" } }, chipPipe);
+svg("path", { class: "pipe-i", d: `M${SRV.x + SRV.w},${CY} H800`, style: { strokeDasharray: "none" } }, chipPipe);
+art.insertBefore(chipPipe, gSrv);
+
+// ---- the model file coming from ollama.com (passes behind the memory bar) -----------------------------------------------------
+const dlBlock = grp(art);
+svg("rect", { class: "seg-mod", x: -55, y: -28, width: 110, height: 56, rx: 12 }, dlBlock);
+svg("text", { class: "t-tag", x: 0, y: -3, text: "4b" }, dlBlock);
+svg("text", { class: "t-size", x: 0, y: 19, text: "3.4 GB" }, dlBlock);
+
+// ---- right: chip, memory, disk -------------------------------------------------------------------------------------------
+const gChip = svg("g", { transform: `translate(${CHIP.x} ${CHIP.y})` }, art);
+chipLayer(gChip, "chip-ink");
+const chipRed = chipLayer(gChip, "chip-red");
+svg("rect", { class: "chip-die", x: -26, y: -26, width: 52, height: 52, rx: 10 }, gChip);
+svg("circle", { class: "chip-dot", cx: -44, cy: -44, r: 5 }, gChip);
+
+svg("text", { class: "t-comp", x: MEM.x, y: MEM.y - 12, text: "memory · 16 GB" }, art);
+svg("rect", { class: "mem-bar", x: MEM.x, y: MEM.y, width: MEM.w, height: MEM.h, rx: 14 }, art);
+const sy = MEM.y + 2, sh = MEM.h - 4;
+svg("rect", { class: "seg-sys", x: MEM.x + 2, y: sy, width: 5 * GB - 1.5, height: sh, rx: 12 }, art);
+svg("text", { class: "t-seg", x: MEM.x + 10, y: sy + sh / 2 + 7, text: "system + apps" }, art);
+const memBlock = svg("rect", { class: "seg-mod fb", x: MODEL_X, y: sy, width: MODEL_W, height: sh, rx: 12 }, art);
+const memLabel = svg("text", { class: "t-lbl", x: MC, y: MEM.y + MEM.h + 30 }, art);
+svg("tspan", { style: { fill: "var(--model)" }, text: "gemma3:1b" }, memLabel);
+svg("tspan", { style: { fill: "var(--muted)" }, text: " · 1.2 GB" }, memLabel);
+
+svg("text", { class: "t-comp", x: MEM.x + 2, y: DISK_Y - 10, text: "disk" }, art);
+svg("rect", { class: "plank", x: MEM.x, y: DISK_Y, width: MEM.w - 4, height: 12, rx: 6 }, art);
+svg("rect", { class: "seg-mod", x: MC - DISK_W / 2, y: DISK_Y - 56, width: DISK_W, height: 56, rx: 8 }, art);
+
+// ---- sprites ---------------------------------------------------------------------------------------------------------------
+const mini = (k) => bubble(art, { w: 60, h: 40, r: 12, t: 11, tx: 12, k });
+const miniQ = [mini("q"), mini("q"), mini("q")], miniA = mini("a"), warnB = mini("w");
+const tiles = [44, 56, 36, 50, 40].map(w => svg("rect", { class: "tile", x: -w / 2, y: -11, width: w, height: 22, rx: 6 }, art));
+
+// ---- beat 3: ollama.com, the cloud tag, its path, the switch ------------------------------------------------------------------
+const cloudPath = `M556,190 V${RUN} H1010`;
+const gCloud = grp(art);
+const wPipe = [svg("path", { class: "pipe-o pipe-w", d: cloudPath, pathLength: 1 }, gCloud), svg("path", { class: "pipe-i", d: cloudPath, pathLength: 1 }, gCloud)];
+const warnLbl = svg("text", { class: "t-warn", x: 790, y: RUN + 30, text: "runs on someone else's computer" }, art);
+const tagC = grp(art);
+svg("rect", { class: "tag-c", x: 506, y: 190, width: 100, height: 34, rx: 17 }, tagC);
+svg("text", { class: "t-tagc", x: 556, y: 214, text: ":cloud" }, tagC);
+const sw = grp(art);
+svg("rect", { class: "sw", x: 372, y: 190, width: 134, height: 34, rx: 17 }, sw);
+svg("text", { class: "t-sw", x: 386, y: 213, text: "Cloud" }, sw);
+const trkOn = svg("rect", { class: "trk-on", x: 460, y: 197, width: 34, height: 20, rx: 10 }, sw);
+const trkOff = svg("rect", { class: "trk-off", x: 460, y: 197, width: 34, height: 20, rx: 10 }, sw);
+const knob = svg("circle", { class: "knob", cx: 484, cy: 207, r: 8 }, sw);
+const pill = grp(art);
+svg("rect", { class: "pill", x: 1010, y: RUN - 24, width: 200, height: 48, rx: 24 }, pill);
+svg("text", { class: "t-pill", x: 1110, y: RUN + 8, text: "ollama.com" }, pill);
+art.insertBefore(pill, gChip);                                   // the model block slides out from under it
+art.insertBefore(dlBlock, pill);
+const dlLabel = svg("text", { class: "t-dl", x: DL.x, y: DISK_Y - 70, text: "download, once" }, art);
+const dlTop = grp(art);                                          // keeps the pill above the block's start
+dlTop.appendChild(pill);
+
+// ---- beat 4 -----------------------------------------------------------------------------------------------------------------
+const cap2 = svg("text", { class: "cap", x: 48, y: 130, text: "one server, three windows" }, art);
+const cap4 = svg("text", { class: "cap", x: 48, y: 130, text: "same model + same seed = same answer" }, art);
+const gB4 = grp(art);
+svg("rect", { class: "badge", x: 858, y: 368, width: 344, height: 38, rx: 12 }, gB4);
+svg("path", { class: "badge", d: `M852,404 H876 L${MC},420 Z` }, gB4);
+svg("text", { class: "t-badge", x: 870, y: 394, text: "gemma3:1b · ID 97558784bdc9" }, gB4);
+svg("line", { class: "link", x1: 936, y1: CY, x2: 962, y2: CY }, gB4);
+svg("rect", { class: "seed", x: 962, y: 270, width: 118, height: 44, rx: 14 }, gB4);
+svg("text", { class: "t-seed", x: 1021, y: 300, text: "seed 42" }, gB4);
+const ans = [212, 512].map(cx => {
+  const g = grp(art);
+  svg("text", { class: "t-run", x: cx, y: 350, text: "run " + (cx < 300 ? 1 : 2) }, g);
+  const b = bubble(g, { w: 240, h: 84, lines: ["Sunlight scatters", "in the air."], cls: "t-bl" });
+  b.style.transform = P(cx, 420);
+  return g;
+});
+const eq = svg("text", { class: "t-eq", x: 362, y: 436, text: "=" }, art);
+
+// ---- helpers for the beats ---------------------------------------------------------------------------------------------------
+function kfs(frames, total) {
+  const f = frames.slice();
+  if (f[0].t > 0) f.unshift({ ...f[0], t: 0 });
+  if (f[f.length - 1].t < total) f.push({ ...f[f.length - 1], t: total });
+  return f.map(k => ({ opacity: k.o, transform: P(k.x, k.y, k.s), offset: k.t / total, easing: k.ease || EASE.inOut }));
+}
+const fade = (a, b) => [{ opacity: a }, { opacity: b }];
+const rise = (dy = 12) => [{ opacity: 0, transform: `translateY(${dy}px)` }, { opacity: 1, transform: "translateY(0)" }];
+const pop = [{ opacity: 0, transform: "scale(0.85)" }, { opacity: 1, transform: "scale(1)" }];
+const HID = P(0, 0);
+const SW_OFF = "translateX(-24px)";
+const DIM = 0.4;
+const tileA = i => ({ x: 790, y: CY - 8 + (i % 3) * 8 }), tileB = i => ({ x: 640, y: CY - 8 + (i % 3) * 8 });
+
+defineAnimation({
+  beats: 4,
+  alt: [
+    "Your computer holds three windows on the left, the Ollama app, a Terminal and Python, a server block labeled Ollama, localhost:11434 in the middle, and on the right a memory bar, the chip and a disk holding a model file; only the app window is lit, with a red question bubble in it.",
+    "The app sends the question to the Ollama server, the server loads the model from disk into memory, the chip generates the answer, and the reply goes back to the app window.",
+    "The Terminal and Python windows light up and connect to the same server: one server, three windows.",
+    "From outside the dashed edge, ollama.com sends a model file in through the edge onto the disk, a download that happens once; then a model with a cloud tag sends an orange bubble out through the edge to run on someone else's computer, until the Cloud switch is turned off and that path disappears.",
+    "The model in memory carries a badge, gemma3:1b with ID 97558784bdc9, the chip uses seed 42, and two identical answer bubbles sit side by side: same model plus same seed gives the same answer.",
+  ],
+
+  render(n) {
+    put(gLeft, n < 3 ? 1 : n === 3 ? DIM : 0);
+    put(wins[1], n < 2 ? 0.38 : 1); put(wins[2], n < 2 ? 0.38 : 1);
+    pipes.forEach(([o, i], k) => { const on = k === 0 || n >= 2; [o, i].forEach(p => { p.style.opacity = on ? 1 : 0; p.style.strokeDashoffset = 0; }); });
+    portD.forEach((p, k) => put(p, 1)); portL.forEach((p, k) => put(p, k === 0 || n >= 2 ? 1 : 0));
+    put(chatA, n >= 1 ? 1 : 0, P(202, 354));
+    put(gSrv, n < 4 ? 1 : 0); put(chipPipe, n < 4 ? 1 : 0);
+    srvBox.style.stroke = "";
+    put(memBlock, n >= 1 ? 1 : 0, "");
+    put(memLabel, n >= 1 && n < 4 ? 1 : 0);
+    put(chipRed, 0); put(flash, 0);
+    miniQ.forEach(m => put(m, 0, HID)); put(miniA, 0, HID); put(warnB, 0, HID);
+    tiles.forEach(t => put(t, 0, HID));
+    put(pill, n === 3 ? 1 : 0); put(dlBlock, n >= 3 ? 1 : 0, P(DL.x, DL.y)); put(dlLabel, n === 3 ? 1 : 0);
+    [gCloud, warnLbl, tagC].forEach(e => put(e, 0));
+    wPipe.forEach(p => { p.style.strokeDashoffset = 1; p.style.opacity = 0; });
+    put(sw, n === 3 ? 1 : 0); trkOn.style.opacity = 0; trkOff.style.opacity = 1; knob.style.transform = SW_OFF;
+    put(cap2, n === 2 ? 1 : 0); put(cap4, n === 4 ? 1 : 0);
+    put(gB4, n === 4 ? 1 : 0);
+    ans.forEach(a => put(a, n === 4 ? 1 : 0)); put(eq, n === 4 ? 1 : 0);
+  },
+
+  enter(n, { animate, later }) {
+    const draw = (p, delay, dur) => animate(p, [{ opacity: 1, strokeDashoffset: 1 }, { opacity: 1, strokeDashoffset: 0 }], { duration: dur, delay, easing: EASE.inOut });
+    if (n === 1) {
+      animate(chatQ, [{ transform: P(222, 300, 1) }, { transform: P(222, 300, 1.06) }, { transform: P(222, 300, 1) }], { duration: 300 });
+      animate(miniQ[0], kfs([
+        { t: 0, o: 0, x: 330, y: 304, s: 0.6 }, { t: 250, o: 1, x: 344, y: 308, s: 1 }, { t: 850, o: 1, x: 408, y: 312, s: 1 },
+        { t: 1000, o: 0, x: 424, y: 312, s: 0.6 }, { t: 1900, o: 0, x: 622, y: CY, s: 0.6 }, { t: 2050, o: 1, x: 632, y: CY, s: 1 },
+        { t: 2800, o: 1, x: 780, y: CY, s: 1 }, { t: 2950, o: 0, x: 800, y: CY, s: 0.5 }], 2950), { duration: 2950, easing: EASE.linear });
+      animate(srvBox, [{ stroke: tok("--ink"), offset: 0 }, { stroke: tok("--ink"), offset: 0.43 }, { stroke: tok("--model"), offset: 0.52 }, { stroke: tok("--model"), offset: 0.88 }, { stroke: tok("--ink"), offset: 1 }], { duration: 2400, delay: 0, easing: EASE.linear });
+      animate(memBlock, [{ opacity: 0, transform: "translate(0px, 116px) scale(0.67, 0.875)", offset: 0 }, { opacity: 0, transform: "translate(0px, 116px) scale(0.67, 0.875)", offset: 0.1 }, { opacity: 1, transform: "translate(0px, 116px) scale(0.67, 0.875)", offset: 0.15 }, { opacity: 1, transform: "translate(0px, 0px) scale(1, 1)", offset: 1 }], { duration: 1100, delay: 1000, easing: EASE.inOut });
+      animate(memLabel, fade(0, 1), { duration: 400, delay: 2100 });
+      animate(chipRed, [{ opacity: 0 }, { opacity: 0, offset: 0.55 }, { opacity: 1, offset: 0.6 }, { opacity: 1, offset: 0.93 }, { opacity: 0 }], { duration: 5300, easing: EASE.linear });
+      tiles.forEach((t, i) => { const a = tileA(i), b = tileB(i);
+        animate(t, [{ opacity: 0, transform: P(a.x, a.y) }, { opacity: 1, transform: P(a.x - 20, a.y), offset: 0.15 }, { opacity: 1, transform: P(b.x, b.y), offset: 0.85 }, { opacity: 0, transform: P(b.x - 10, b.y) }], { duration: 800, delay: 3050 + i * 260, easing: EASE.inOut }); });
+      animate(miniA, kfs([
+        { t: 0, o: 0, x: 424, y: 312, s: 0.6 }, { t: 4900, o: 0, x: 424, y: 312, s: 0.6 }, { t: 5000, o: 1, x: 408, y: 312, s: 1 },
+        { t: 5700, o: 1, x: 350, y: 308, s: 1 }, { t: 5850, o: 0, x: 330, y: 304, s: 0.8 }], 5850), { duration: 5850, easing: EASE.linear });
+      animate(chatA, [{ opacity: 0, transform: P(202, 354, 0.8), offset: 0 }, { opacity: 0, transform: P(202, 354, 0.8), offset: 0.93 }, { opacity: 1, transform: P(202, 354, 1) }], { duration: 6200, easing: EASE.pop });
+    }
+
+    if (n === 2) {
+      animate(wins[1], fade(0.38, 1), { duration: 500 }); animate(wins[2], fade(0.38, 1), { duration: 500, delay: 250 });
+      [1, 2].forEach((k, j) => {
+        pipes[k].forEach(p => draw(p, 400 + j * 200, 700));
+        animate(portL[k], fade(0, 1), { duration: 300, delay: 1100 + j * 200 });
+        const y = PY[k];
+        animate(miniQ[k], kfs([{ t: 0, o: 0, x: 340, y, s: 0.6 }, { t: 1100 + j * 200, o: 0, x: 340, y, s: 0.6 }, { t: 1250 + j * 200, o: 1, x: 350, y, s: 1 }, { t: 1700 + j * 200, o: 1, x: 404, y, s: 1 }, { t: 1850 + j * 200, o: 0, x: 420, y, s: 0.6 }], 1850 + j * 200), { duration: 1850 + j * 200, easing: EASE.linear });
+      });
+      animate(cap2, rise(), { duration: 600, delay: 1700 });
+    }
+
+    if (n === 3) {
+      animate(gLeft, fade(1, DIM), { duration: 500 }); animate(cap2, fade(1, 0), { duration: 300 });
+      animate(pill, [{ opacity: 0, transform: "translateY(-14px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 500, delay: 300 });
+      animate(dlBlock, kfs([{ t: 0, o: 0, x: DL.x, y: RUN, s: 0.6 }, { t: 800, o: 0, x: DL.x, y: RUN, s: 0.6 }, { t: 900, o: 1, x: DL.x, y: RUN + 4, s: 0.7 }, { t: 2300, o: 1, x: DL.x, y: DL.y, s: 1 }], 2300), { duration: 2300, easing: EASE.linear });
+      animate(dlLabel, fade(0, 1), { duration: 400, delay: 2400 });
+      animate(tagC, pop, { duration: 400, delay: 2900, easing: EASE.pop });
+      animate(sw, pop, { duration: 400, delay: 2900, easing: EASE.pop });
+      trkOn.style.opacity = 1; trkOff.style.opacity = 0;
+      animate(trkOn, [{ opacity: 1 }, { opacity: 1, offset: 0.99 }, { opacity: 0 }], { duration: 5200, easing: EASE.linear });
+      animate(trkOff, [{ opacity: 0 }, { opacity: 0, offset: 0.99 }, { opacity: 1 }], { duration: 5200, easing: EASE.linear });
+      animate(knob, [{ transform: "translateX(0px)", offset: 0 }, { transform: "translateX(0px)", offset: 0.96 }, { transform: SW_OFF }], { duration: 5400, easing: EASE.linear });
+      gCloud.style.opacity = 1;
+      wPipe.forEach(p => animate(p, [{ opacity: 0, strokeDashoffset: 1 }, { opacity: 1, strokeDashoffset: 1, offset: 0.001 }, { opacity: 1, strokeDashoffset: 0 }, { opacity: 1, strokeDashoffset: 0, offset: 0.8 }, { opacity: 0, strokeDashoffset: 0 }], { duration: 3300, delay: 3300, easing: EASE.linear }));
+      animate(tagC, [{ opacity: 1 }, { opacity: 1, offset: 0.85 }, { opacity: 0 }], { duration: 2500, delay: 3300, easing: EASE.linear });
+      animate(warnB, kfs([{ t: 0, o: 0, x: 556, y: 190, s: 0.7 }, { t: 3700, o: 0, x: 556, y: 190, s: 0.7 }, { t: 3800, o: 1, x: 556, y: 180, s: 1 }, { t: 4300, o: 1, x: 556, y: RUN, s: 1 }, { t: 4800, o: 1, x: 990, y: RUN, s: 1 }, { t: 4900, o: 0, x: 1010, y: RUN, s: 0.7 }], 4900), { duration: 4900, easing: EASE.linear });
+      animate(flash, [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.6 }, { opacity: 0 }], { duration: 900, delay: 3900 });
+      animate(warnLbl, [{ opacity: 0 }, { opacity: 0, offset: 0.001 }, { opacity: 1 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 2800, delay: 4200, easing: EASE.linear });
+    }
+
+    if (n === 4) {
+      animate(gLeft, fade(DIM, 0), { duration: 500 }); animate(gSrv, fade(1, 0), { duration: 500 }); animate(chipPipe, fade(1, 0), { duration: 500 });
+      animate(pill, fade(1, 0), { duration: 500 }); animate(sw, fade(1, 0), { duration: 500 }); animate(dlLabel, fade(1, 0), { duration: 500 });
+      animate(memLabel, fade(1, 0), { duration: 500 });
+      animate(gB4, rise(10), { duration: 500, delay: 400 });
+      animate(cap4, rise(), { duration: 500, delay: 800 });
+      ans.forEach((a, i) => animate(a, pop, { duration: 450, delay: 700 + i * 450, easing: EASE.pop }));
+      animate(eq, fade(0, 1), { duration: 400, delay: 1100 });
+    }
+  },
+});
+</script>
+</body>
+</html>
