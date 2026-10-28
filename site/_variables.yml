@@ -1,0 +1,31 @@
+# One place for facts that appear on several pages and in the deck.
+
+event:
+  title: "Working with Local LLMs"
+  series: "Data Science Special Topics"
+  date: "Tuesday, November 3, 2026"
+  time: "6:00–7:00 pm"
+  where: "Online (Zoom)"
+  page: "https://www.lib.ncsu.edu/workshops/data-science-special-topics-working-local-llms/2026-11-03"
+
+site: "https://ncsu-libraries.github.io/local-llms/"
+site-short: "ncsu-libraries.github.io/local-llms"
+go: "go.ncsu.edu/local-llms"   # short link to the site, on the slides and the QR code (images/qr-session.svg)
+repo: "https://github.com/NCSU-Libraries/local-llms"
+help: "https://go.ncsu.edu/getdatahelp"
+email: "lib-datascienceservices@ncsu.edu"
+eval: "https://go.ncsu.edu/dss-workshop-eval"
+workshops: "https://go.ncsu.edu/datavizworkshops"   # every DSS workshop, with dates
+
+# Ollama, and the version these pages were checked against
+ollama:
+  download: "https://ollama.com/download"
+  docs: "https://docs.ollama.com"
+  checked: "0.40.12"
+  checked-date: "October 27, 2026"
+
+# The starter model everyone downloads first: small enough for any laptop, no "thinking" preamble.
+# The second model is each attendee's own choice from the same family (gemma3:4b, 12b, 27b).
+starter:
+  name: "gemma3:1b"
+  size: "0.8 GB"

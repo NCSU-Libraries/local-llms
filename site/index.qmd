@@ -1,0 +1,38 @@
+---
+pagetitle: "Working with Local LLMs"
+toc: false
+title-block-style: none
+---
+
+::: {.hero}
+<p class="small-muted" style="color:#BDBDBD;margin:0 0 .3rem">{{< var event.series >}} · NC State University Libraries</p>
+
+# Working with Local LLMs
+
+<p class="when">{{< var event.date >}}, {{< var event.time >}} · {{< var event.where >}}</p>
+
+Run AI models on your own computer instead of someone else's.
+:::
+
+## Before the session
+
+1. **Look up your computer's memory (RAM) and graphics card.** On a Mac, open the Apple menu → **About This Mac**. On
+   Windows, open **Settings → System → About**. We'll use them to choose a model that runs well on your machine.
+2. **Install Ollama and the starter model** with the [Setup](setup.qmd) steps: about 10 minutes, plus a download. Can't
+   do it ahead? We'll do it together at the start.
+
+You don't need a powerful computer, and you're welcome to just watch.
+
+## What we'll do
+
+- Install Ollama, a free app for running open models, and download a small first model.
+- Chat with it, and see how fast it runs on your computer.
+- Learn how to choose a model that fits your computer, then download a second one and compare the two.
+- Talk about why researchers want a local option, and the honest trade-offs in speed and capability.
+
+## You'll leave with
+
+A model running on your own computer, and the know-how to choose your next one.
+
+Questions about the workshop: [{{< var email >}}](mailto:{{< var email >}}). Help installing:
+[go.ncsu.edu/getdatahelp]({{< var help >}}).

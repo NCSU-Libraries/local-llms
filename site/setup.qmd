@@ -1,0 +1,147 @@
+---
+title: "Set up"
+subtitle: "About 10 minutes, plus a download. Do it before the session if you can; we'll also do it together at the start."
+---
+
+::: {.callout-note}
+## What you need
+
+- A Mac with macOS 14 (Sonoma) or newer, or a PC with Windows 10 (version 22H2) or Windows 11.
+- About 10 GB of free disk space.
+- Any amount of memory. The starter model runs on 8 GB.
+
+On a Chromebook or a tablet, or on a computer that won't let you install apps? Come anyway. You'll see every step,
+and you're welcome to just watch.
+:::
+
+## 1. Check your computer {#check}
+
+Write these down. In the session, we'll use them to choose a second model that fits your computer.
+
+::: {.panel-tabset}
+### Mac
+
+Open the Apple menu → **About This Mac**.
+
+- **Chip:** Apple M1 or newer means Ollama uses the Mac's graphics, which is fast. An Intel chip works too, more
+  slowly.
+- **Memory:** for example, 16 GB.
+- **macOS:** 14 (Sonoma) or newer.
+
+### Windows
+
+Open **Settings → System → About**, and note **Installed RAM**: for example, 16 GB.
+
+Then press {{< kbd Ctrl-Shift-Esc >}} to open Task Manager, and click **Performance**. A GPU named **NVIDIA** or **AMD
+Radeon RX** is a dedicated graphics card: note its **Dedicated GPU memory**. Only Intel graphics, or AMD Radeon
+Graphics? Ollama runs on your processor instead: slower, but it works.
+:::
+
+## 2. Install Ollama {#install}
+
+Ollama is a free app that downloads open AI models and runs them on your computer.
+
+::: {.panel-tabset}
+### Mac
+
+1. Go to [ollama.com/download]({{< var ollama.download >}}) and click **Download for macOS**. The file is about
+   230 MB.
+2. Open the downloaded file and drag **Ollama** into **Applications**.
+3. Open **Ollama** from Applications. If it offers to install the command line tool, say yes. It may ask for your
+   password.
+4. When it asks you to sign in, choose **No thanks, I'll use Ollama locally**. You don't need an account.
+
+A llama icon in the menu bar means Ollama is running.
+
+### Windows
+
+1. Go to [ollama.com/download]({{< var ollama.download >}}) and click **Download for Windows**. The installer is
+   about 1.7 GB, so start it early.
+2. Run **OllamaSetup.exe**. It installs for your account only, so you don't need administrator rights.
+3. When Ollama opens and asks you to sign in, choose **No thanks, I'll use Ollama locally**. You don't need an
+   account.
+
+A llama icon by the clock means Ollama is running.
+
+### Linux
+
+Run this in a terminal. It asks for your password (`sudo`) and needs the `zstd` tool; on Ubuntu, install it first
+with `sudo apt install zstd`.
+
+::: {.prompt .prompt-shell}
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+:::
+
+The chat app is for Mac and Windows. On Linux, use the terminal steps below.
+:::
+
+::: {.callout-tip}
+## Already have Ollama?
+
+Update it: download the latest from [ollama.com/download]({{< var ollama.download >}}) and install it over the old
+one. The starter model needs Ollama 0.30 or newer.
+:::
+
+## 3. Keep everything on your computer {#local}
+
+Ollama can also run some models on its company's servers. Those are marked **cloud**, and your words leave your
+computer when you use them. For this workshop, turn them off: in the Ollama window, open **Settings** and switch off
+**Cloud** ("Enable cloud models and web search").
+
+## 4. Download the starter model {#starter}
+
+Open a terminal, a window where you type commands instead of clicking.
+
+::: {.panel-tabset}
+### Mac
+
+Press {{< kbd Cmd-Space >}}, type **Terminal**, and press {{< kbd Enter >}}.
+
+### Windows
+
+Press the {{< kbd Win >}} key, type **PowerShell**, and press {{< kbd Enter >}}.
+:::
+
+Copy this line, paste it into the terminal, and press {{< kbd Enter >}}:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama pull {{< var starter.name >}}
+```
+:::
+
+It downloads about {{< var starter.size >}}. It's done when it prints `success`. Then say hello:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama run {{< var starter.name >}} "Say hello in one sentence."
+```
+:::
+
+**It works when** the model answers with a greeting, like `Hello there!`
+
+Now try the app: in the Ollama window, choose **{{< var starter.name >}}** in the model menu and send it a message.
+
+## 5. That's all until the session {#done}
+
+There's no need to download other models: choosing one that fits your computer is part of the session. Ollama keeps
+running quietly in the background. To stop it, click the llama icon and choose **Quit Ollama**.
+
+## If something goes wrong
+
+| What you see | What to do |
+| --- | --- |
+| `command not found: ollama` (Mac) | Open the Ollama app once and let it install the command line tool. Then open a new Terminal window. |
+| `'ollama' is not recognized` (Windows) | Close PowerShell and open a new one. |
+| `could not connect to ollama server` | Ollama isn't running. Open the Ollama app; the llama icon appears when it's ready. |
+| `You need to be signed in to Ollama to run Cloud models.` | You chose a cloud model. Choose **{{< var starter.name >}}** instead. |
+| The download is slow or stops | Run the same `ollama pull` line again. It picks up where it stopped. |
+| The installer won't run on a university-managed computer | Ask your IT support, or watch along in the session. |
+| Your Mac runs macOS 13 or older | This version of Ollama won't install. Update macOS, or watch along. |
+| Not enough disk space | Free up about 10 GB. Models live in `~/.ollama/models` on a Mac and in `C:\Users\<you>\.ollama\models` on Windows. **Settings → Model location** can move them. |
+
+<p class="small-muted">Checked against Ollama {{< var ollama.checked >}} on {{< var ollama.checked-date >}}. Ollama
+changes often; if a screen looks different, the <a href="{{< var ollama.docs >}}">official docs</a> win. Help with
+your own setup: <a href="{{< var help >}}">go.ncsu.edu/getdatahelp</a>.</p>
