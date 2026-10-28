@@ -44,8 +44,6 @@ Data Science Services workshop taught by Alp Tezbasaran.
 
 ## Layout
 
-Paths marked *(planned)* don't exist yet.
-
 | Path | Contents |
 | --- | --- |
 | `site/` | Quarto website |
@@ -54,8 +52,8 @@ Paths marked *(planned)* don't exist yet.
 | `site/slides/anim/data/race.json` | The race's recorded runs, written by `tools/record_race.py` on Alp's Mac. Don't hand-edit it |
 | `site/_variables.yml` | Facts used on several pages and in the deck: event, links, the go link, the Ollama version the pages were checked against |
 | `site/setup.qmd` | Install Ollama (Mac and Windows tabs, a Linux note), pull the starter model, "It works when" checks, and fixes |
-| `site/hands-on.qmd` *(planned)* | The session's steps: chat, measure speed, choose and compare a second model, clean up |
-| `site/python.qmd` *(planned)* | The extra for coders: the local API from Python |
+| `site/hands-on.qmd` | The session's second half: chat with the starter, measure its speed, choose and compare a second model, clean up, choose the next one |
+| `site/python.qmd` | The extra for coders: chat, streaming, repeatable runs, a survey example and the OpenAI client, all against the local API |
 | `site/slides/anim/_shared/` | The animation framework copied from parallelization-with-python: stage fit, beats, deck bridge, and this deck's color tokens |
 | `tools/record_race.py` | Records the race through Ollama's local API: one streamed answer per lane, GPU or CPU only |
 | `tools/check_links.py` | Checks every link and image in `site/_site` (`--web` also requests external URLs) |
