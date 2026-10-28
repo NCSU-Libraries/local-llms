@@ -1,197 +1,30 @@
 {
-  "question": "In what year was NC State University founded?",
-  "machine": "MacBook Pro, Apple silicon, 24 GB (placeholder)",
+  "question": "In what year was NC State University founded? Answer in one sentence.",
+  "machine": "MacBook Pro, M4 Pro, 24 GB",
   "ollama": "0.40.12",
-  "recorded": "2026-10-27",
-  "placeholder": true,
+  "recorded": "2026-10-28",
+  "placeholder": false,
   "lanes": [
     {
       "model": "gemma3:1b",
       "processor": "GPU",
-      "eval_rate": 123.3,
+      "eval_rate": 192.2,
       "correct": false,
-      "tokens": [
-        [
-          148,
-          "NC"
-        ],
-        [
-          159,
-          " State"
-        ],
-        [
-          169,
-          " University"
-        ],
-        [
-          180,
-          " was"
-        ],
-        [
-          190,
-          " founded"
-        ],
-        [
-          201,
-          " in"
-        ],
-        [
-          211,
-          " 1885."
-        ]
-      ]
+      "tokens": [[34,"NC"],[41," State"],[46," University"],[52," was"],[58," founded"],[63," in"],[69," "],[74,"1"],[80,"8"],[85,"8"],[90,"5"],[96,"."]]
+    },
+    {
+      "model": "gemma3:4b",
+      "processor": "GPU",
+      "eval_rate": 83.2,
+      "correct": true,
+      "tokens": [[195,"North"],[208," Carolina"],[221," State"],[233," University"],[246," was"],[258," founded"],[270," in"],[283," "],[296,"1"],[308,"8"],[321,"8"],[333,"7"],[346," as"],[358," the"],[371," Agricultural"],[383," and"],[396," Mechanical"],[408," College"],[421," of"],[433," North"],[446," Carolina"],[459,"."]]
     },
     {
       "model": "gemma3:12b",
       "processor": "GPU",
-      "eval_rate": 22.1,
+      "eval_rate": 31.5,
       "correct": true,
-      "tokens": [
-        [
-          462,
-          "North"
-        ],
-        [
-          521,
-          " Carolina"
-        ],
-        [
-          580,
-          " State"
-        ],
-        [
-          638,
-          " University"
-        ],
-        [
-          697,
-          " was"
-        ],
-        [
-          756,
-          " founded"
-        ],
-        [
-          815,
-          " in"
-        ],
-        [
-          874,
-          " 1887"
-        ],
-        [
-          933,
-          " as"
-        ],
-        [
-          991,
-          " the"
-        ],
-        [
-          1050,
-          " Agricultural"
-        ],
-        [
-          1109,
-          " and"
-        ],
-        [
-          1168,
-          " Mechanical"
-        ],
-        [
-          1227,
-          " College"
-        ],
-        [
-          1286,
-          " of"
-        ],
-        [
-          1344,
-          " North"
-        ],
-        [
-          1403,
-          " Carolina."
-        ]
-      ]
-    },
-    {
-      "model": "gemma3:4b",
-      "processor": "CPU only",
-      "eval_rate": 9.1,
-      "correct": true,
-      "tokens": [
-        [
-          1180,
-          "North"
-        ],
-        [
-          1323,
-          " Carolina"
-        ],
-        [
-          1466,
-          " State"
-        ],
-        [
-          1609,
-          " University"
-        ],
-        [
-          1751,
-          " was"
-        ],
-        [
-          1894,
-          " founded"
-        ],
-        [
-          2037,
-          " in"
-        ],
-        [
-          2180,
-          " 1887"
-        ],
-        [
-          2323,
-          " as"
-        ],
-        [
-          2466,
-          " the"
-        ],
-        [
-          2609,
-          " Agricultural"
-        ],
-        [
-          2751,
-          " and"
-        ],
-        [
-          2894,
-          " Mechanical"
-        ],
-        [
-          3037,
-          " College"
-        ],
-        [
-          3180,
-          " of"
-        ],
-        [
-          3323,
-          " North"
-        ],
-        [
-          3466,
-          " Carolina."
-        ]
-      ]
+      "tokens": [[204,"NC"],[237," State"],[270," University"],[303," was"],[336," founded"],[370," in"],[403," "],[436,"1"],[469,"8"],[502,"8"],[535,"7"],[569," as"],[602," the"],[636," North"],[669," Carolina"],[702," College"],[735," of"],[768," Agriculture"],[801," and"],[834," Mechanic"],[867," Arts"],[900,"."]]
     }
   ]
 }

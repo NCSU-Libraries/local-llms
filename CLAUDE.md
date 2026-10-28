@@ -55,7 +55,7 @@ Data Science Services workshop taught by Alp Tezbasaran.
 | `site/hands-on.qmd` | The session's second half: chat with the starter, measure its speed, choose and compare a second model, clean up, choose the next one |
 | `site/python.qmd` | The extra for coders: chat, streaming, repeatable runs, a survey example and the OpenAI client, all against the local API |
 | `site/slides/anim/_shared/` | The animation framework copied from parallelization-with-python: stage fit, beats, deck bridge, and this deck's color tokens |
-| `tools/record_race.py` | Records the race through Ollama's local API: one streamed answer per lane, GPU or CPU only |
+| `tools/record_race.py` | Records the race through Ollama's local API: one streamed answer per lane, temperature 0, seed 42, a 4,096-token context. Run it on Alp's Mac with Zoom closed |
 | `tools/check_links.py` | Checks every link and image in `site/_site` (`--web` also requests external URLs) |
 | `tools/shoot.mjs` | Headless Chrome screenshots of pages and slides |
 | `tools/wire_deck.py` | Rewrites each animation slide in the deck from its page: the title, one fragment per beat, the text alternative and `data-state`. `--check` steps every slide of the rendered deck |
@@ -79,9 +79,9 @@ pushes.
 
 ## Testing in a clean environment
 
-Don't test instructions on Alp's Mac: it has two Ollama installs. The app (0.32.13 on 2026-10-27) provides the
-`ollama` command through `/usr/local/bin`, while Homebrew's 0.33.0 runs the server as a brew service. Test in an empty
-Ubuntu container instead, the way a new user would start. Alp checks the Mac and Windows installers by hand.
+Alp's Mac is the demo machine, not a clean test: since 2026-10-28 it runs the Ollama app 0.40.12 only (Homebrew's
+copy was removed), with the demo models pulled and Cloud off. Test instructions in an empty Ubuntu container instead,
+the way a new user would start. Alp checks the Mac and Windows installers by hand.
 
 ```bash
 docker run -d --name local-llms-fresh --hostname fresh ubuntu:24.04 sleep infinity

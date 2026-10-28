@@ -6,7 +6,7 @@ arrived. The page replays the file this writes, site/slides/anim/data/race.json,
 library only.
 
 For each --lane MODEL:gpu|cpu the script loads the model with a tiny request (so the load time is not in the race),
-checks where it runs, streams the answer with temperature 0 and seed 42 (a cpu lane also gets num_gpu 0, which keeps
+checks where it runs, streams the answer with temperature 0, seed 42 and a 4,096-token context (a cpu lane also gets num_gpu 0, which keeps
 the model off the graphics chip), and unloads the model. It never downloads anything: pull the models first, and close
 Zoom and other heavy apps so the timings are clean. The page draws up to three lanes.
 
@@ -89,9 +89,14 @@ def get_json(host, path):
         return json.load(r)
 
 
+# The context length attendees' laptops get by default (Ollama gives 4,096 under 24 GiB of graphics memory). Left to
+# Ollama, this Mac chose up to 131,072 tokens, whose working memory pushed gemma3:12b partly out of graphics memory.
+NUM_CTX = 4096
+
+
 def options(proc, **extra):
     """The request options: the same for every lane, plus num_gpu 0 for a cpu lane."""
-    o = {"temperature": 0, "seed": SEED}
+    o = {"temperature": 0, "seed": SEED, "num_ctx": NUM_CTX}
     if proc == "cpu":
         o["num_gpu"] = 0
     o.update(extra)
