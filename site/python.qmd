@@ -1,0 +1,234 @@
+---
+title: "Use it from Python"
+subtitle: "An extra, about 20 minutes, at your own pace. Everything runs on your computer."
+---
+
+::: {.callout-note}
+## What this is for
+
+The model you set up answers your scripts the same way it answers the chat app. Your data stays on your computer,
+there's no charge per use, and with two settings you can get the same answer every time. You need to have written a
+little Python, and to have finished [Set up](setup.qmd).
+:::
+
+## 1. Check that Ollama is running {#running}
+
+Ollama should be running (the llama icon is showing), and the starter model should be downloaded. In a terminal:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama list
+```
+:::
+
+**It works when** the list includes `{{< var starter.name >}}`. If it doesn't, go back to
+[Set up](setup.qmd#starter).
+
+## 2. Set up Python with uv {#uv}
+
+uv is one small tool that installs Python and the packages you need. It needs no admin rights. If you already have it
+(`uv --version` prints a number), skip to the project folder.
+
+::: {.panel-tabset}
+### Mac
+
+::: {.prompt .prompt-shell}
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+:::
+
+### Windows
+
+::: {.prompt .prompt-shell}
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+:::
+:::
+
+**Close the terminal and open a new one**, so it can find uv. Then make a project folder and add the Ollama package:
+
+::: {.prompt .prompt-shell}
+```bash
+uv init --vcs none --no-package dss-ollama
+cd dss-ollama
+uv add ollama
+```
+:::
+
+**It works when** the last command ends with a list of installed packages, including `+ ollama==0.6.3`. Save each
+script below inside this folder.
+
+## 3. Your first chat {#chat}
+
+Save this as `hello.py`. It's the code from the slide.
+
+```python
+import ollama
+
+reply = ollama.chat(model="gemma3:1b",
+                    messages=[{"role": "user", "content": "Hello!"}])
+print(reply.message.content)
+```
+
+::: {.prompt .prompt-shell}
+```bash
+uv run hello.py
+```
+:::
+
+**It works when** a greeting prints, like `Hello there! How's your day going so far?` The words will differ from
+run to run. Step 5 fixes that.
+
+## 4. Stream the answer {#stream}
+
+Without streaming, nothing prints until the whole answer is done. With `stream=True`, you get it piece by piece, the
+way the chat app shows it. Save this as `stream.py`:
+
+```python
+import ollama
+
+stream = ollama.chat(model="gemma3:1b",
+                     messages=[{"role": "user", "content": "Name three fruits."}],
+                     stream=True)
+for chunk in stream:
+    print(chunk.message.content, end="", flush=True)
+print()
+```
+
+::: {.prompt .prompt-shell}
+```bash
+uv run stream.py
+```
+:::
+
+**It works when** the answer appears in pieces, for example a numbered list of three fruits.
+
+## 5. Get the same answer every time {#repeat}
+
+A model picks each word with a little chance. Two options remove it: `temperature` 0 means "always take the likeliest
+word", and `seed` fixes whatever randomness is left. Save this as `repeat.py`:
+
+```python
+import ollama
+
+for _ in range(2):
+    reply = ollama.chat(model="gemma3:1b",
+                        messages=[{"role": "user", "content": "Name a fruit, in one word."}],
+                        options={"temperature": 0, "seed": 42})
+    print(reply.message.content)
+```
+
+::: {.prompt .prompt-shell}
+```bash
+uv run repeat.py
+```
+:::
+
+**It works when** both answers match: `Apple`, then `Apple`. Take the options out and try again; the answers may
+differ.
+
+Repeatable also means writing down what you ran. Record these with your results:
+
+- the model's **ID**, from `ollama list` (for `{{< var starter.name >}}` it's `97558784bdc9`). A name like
+  `gemma3:1b` can point to a newer build later; the ID can't.
+- the **Ollama version**, from `ollama -v`.
+- the options (`temperature`, `seed`) and the exact prompt.
+
+The same answer is guaranteed only on the same computer, with the same model and the same Ollama version.
+
+## 6. A research-shaped example {#survey}
+
+Label short survey answers by theme, one call each, and save a CSV. The model must pick from a fixed list. Save
+this as `survey.py`:
+
+```python
+import csv
+import ollama
+
+themes = ["cost", "speed", "ease of use", "support", "other"]
+answers = [
+    "It took forever to load.", "I couldn't afford the license.",
+    "The menus were confusing.", "Nobody answered my email for a week.",
+    "Way too pricey for a student.", "Everything felt instant.",
+    "I had to watch three videos to find the export button.",
+    "The weather was nice that day.",
+]
+rows = []
+for text in answers:
+    prompt = (f"Label this survey answer with exactly one of: {', '.join(themes)}. "
+              f"Reply with the label only.\n\nAnswer: {text}")
+    reply = ollama.chat(model="gemma3:1b", messages=[{"role": "user", "content": prompt}],
+                        options={"temperature": 0, "seed": 42})
+    rows.append({"answer": text, "theme": reply.message.content.strip().lower()})
+with open("themes.csv", "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=["answer", "theme"])
+    writer.writeheader()
+    writer.writerows(rows)
+```
+
+::: {.prompt .prompt-shell}
+```bash
+uv run survey.py
+```
+:::
+
+**It works when** a file named `themes.csv` appears in your folder, with one row per answer. Open it. On our test
+run, the small starter model got seven of eight right. This is the wrong one:
+
+```
+The menus were confusing.,support
+```
+
+"The menus were confusing" is an ease-of-use answer, not a support one. A small model makes mistakes like this, and
+these answers are made up, so never trust labels you haven't checked. Compare against labels you made yourself, and
+try a bigger model by changing the name in the script. Your answers never left your computer.
+
+## 7. Already have code for OpenAI's API? {#openai}
+
+Ollama also speaks the same language as OpenAI's API. Point the `openai` package at your computer instead. Add it:
+
+::: {.prompt .prompt-shell}
+```bash
+uv add openai
+```
+:::
+
+Save this as `openai_hello.py`:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
+reply = client.chat.completions.create(
+    model="gemma3:1b",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(reply.choices[0].message.content)
+```
+
+::: {.prompt .prompt-shell}
+```bash
+uv run openai_hello.py
+```
+:::
+
+**It works when** a greeting prints. The key can be any text: Ollama doesn't check it, and nothing goes to OpenAI.
+The only changes from code written for OpenAI are `base_url` and the model name.
+
+## If something goes wrong
+
+| What you see | What to do |
+| --- | --- |
+| `ConnectionError: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible.` | Ollama isn't running. Open the Ollama app and wait for the llama icon. With the `openai` package, the same problem reads `openai.APIConnectionError: Connection error.` |
+| `ollama._types.ResponseError: model 'nope:1b' not found (status code: 404)` | The name is misspelled or the model isn't downloaded. Run `ollama list` and copy the name exactly, or run `ollama pull` for it. With `openai`, it reads `openai.NotFoundError: Error code: 404`. |
+| `command not found: uv` (Mac) or `'uv' is not recognized` (Windows) | Close the terminal and open a new one. |
+| The first call takes several seconds, later ones are quick | Ollama is loading the model into memory. It stays loaded for about 5 minutes after the last call. |
+| A long run seems stuck | The model is working; a bigger model is slower. Use `stream=True` to watch it, and try a smaller model. |
+| `ModuleNotFoundError: No module named 'ollama'` | Run the script with `uv run`, from inside your project folder. |
+
+<p class="small-muted">Tested with Ollama {{< var ollama.checked >}}, Python package <code>ollama</code> 0.6.3,
+<code>openai</code> 3.40.0 and uv 0.13.6, on Linux with {{< var starter.name >}} running on the CPU. Packages change
+often; the <a href="https://github.com/ollama/ollama-python">ollama-python</a> page wins if something differs. Help
+with your own setup: <a href="{{< var help >}}">go.ncsu.edu/getdatahelp</a>.</p>

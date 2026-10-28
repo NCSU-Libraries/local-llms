@@ -13,7 +13,7 @@ Zoom and other heavy apps so the timings are clean. The page draws up to three l
 The file (annotated here; JSON has no comments):
 
     {
-      "question":    "How many r's are in the word strawberry?",
+      "question":    "In what year was NC State University founded? Answer in one sentence.",
       "machine":     "MacBook Pro, Apple M3 Pro, 36 GB",     # the --machine text
       "ollama":      "0.40.12",                              # GET /api/version
       "recorded":    "2026-11-01",                           # the day of the recording
@@ -33,7 +33,7 @@ The file (annotated here; JSON has no comments):
 Example:
 
     python3 tools/record_race.py \
-        --question "How many r's are in the word strawberry?" --expect 3 \
+        --question "In what year was NC State University founded? Answer in one sentence." --expect 1887 \
         --machine "MacBook Pro, Apple M3 Pro, 36 GB" \
         --lane gemma3:1b:gpu --lane gemma3:12b:gpu --lane gemma3:4b:cpu
 

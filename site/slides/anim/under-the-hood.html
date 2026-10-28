@@ -55,7 +55,9 @@
   .trk-on   { fill: var(--warn); }
   .trk-off  { fill: var(--overhead); }
   .knob     { fill: var(--paper); }
-  .t-warn   { font: 800 22px var(--font); fill: var(--warn); text-anchor: middle; }
+  .t-warn   { font: 800 20px var(--font); fill: var(--warn); text-anchor: middle; }
+  .xbg      { fill: var(--paper); stroke: var(--warn); stroke-width: 4; }
+  .xmark    { fill: none; stroke: var(--warn); stroke-width: 7; stroke-linecap: round; }
   .t-dl     { font: 700 22px var(--font); fill: var(--muted); text-anchor: middle; }
   .cap      { font: 800 32px var(--font); fill: var(--ink); }
   .badge    { fill: var(--model); }
@@ -94,7 +96,7 @@ const CY = 292;                                                  // the server-t
 const GB = 32.5, MEM = { x: 678, y: 416, w: 16 * GB + 4, h: 72 };
 const MODEL_X = MEM.x + 2 + 5 * GB + 1.5, MODEL_W = 1.2 * GB - 3, MC = MODEL_X + MODEL_W / 2;     // gemma3:1b, 1.2 GB in memory
 const DISK_Y = 596, DISK_W = 0.8 * GB;                           // 0.8 GB download
-const RUN = 118, DL = { x: 1110, y: DISK_Y - 28 };
+const RUN = 110, DL = { x: 1110, y: DISK_Y - 28 };
 
 // ---- the computer and its edge --------------------------------------------------------------------------------------
 svg("rect", { class: "edge", x: EDGE.x, y: EDGE.y, width: EDGE.w, height: EDGE.h, rx: EDGE.r }, art);
@@ -195,7 +197,12 @@ const tiles = [44, 56, 36, 50, 40].map(w => svg("rect", { class: "tile", x: -w /
 const cloudPath = `M556,190 V${RUN} H1010`;
 const gCloud = grp(art);
 const wPipe = [svg("path", { class: "pipe-o pipe-w", d: cloudPath, pathLength: 1 }, gCloud), svg("path", { class: "pipe-i", d: cloudPath, pathLength: 1 }, gCloud)];
-const warnLbl = svg("text", { class: "t-warn", x: 790, y: RUN + 30, text: "runs on someone else's computer" }, art);
+// The label sits left of the pipe's corner, clear of the pipe and the dashed edge; text-anchor end.
+const warnLbl = svg("text", { class: "t-warn", x: 530, y: RUN + 7, style: { textAnchor: "end" }, text: "runs on someone else's computer" }, art);
+const gX = grp(art);                                             // the crossed-out path, once Cloud is off
+svg("circle", { class: "xbg", cx: 790, cy: RUN, r: 22 }, gX);
+svg("path", { class: "xmark", d: `M776,${RUN - 14} L804,${RUN + 14} M804,${RUN - 14} L776,${RUN + 14}` }, gX);
+svg("line", { class: "xmark", x1: 192, y1: RUN, x2: 532, y2: RUN, style: { strokeWidth: "4px" } }, gX);
 const tagC = grp(art);
 svg("rect", { class: "tag-c", x: 506, y: 190, width: 100, height: 34, rx: 17 }, tagC);
 svg("text", { class: "t-tagc", x: 556, y: 214, text: ":cloud" }, tagC);
@@ -272,8 +279,8 @@ defineAnimation({
     miniQ.forEach(m => put(m, 0, HID)); put(miniA, 0, HID); put(warnB, 0, HID);
     tiles.forEach(t => put(t, 0, HID));
     put(pill, n === 3 ? 1 : 0); put(dlBlock, n >= 3 ? 1 : 0, P(DL.x, DL.y)); put(dlLabel, n === 3 ? 1 : 0);
-    [gCloud, warnLbl, tagC].forEach(e => put(e, 0));
-    wPipe.forEach(p => { p.style.strokeDashoffset = 1; p.style.opacity = 0; });
+    put(gCloud, n === 3 ? 0.35 : 0); put(warnLbl, n === 3 ? 0.8 : 0); put(tagC, n === 3 ? 0.5 : 0); put(gX, n === 3 ? 1 : 0);
+    wPipe.forEach(p => { p.style.strokeDashoffset = n === 3 ? 0 : 1; p.style.opacity = n === 3 ? 1 : 0; });
     put(sw, n === 3 ? 1 : 0); trkOn.style.opacity = 0; trkOff.style.opacity = 1; knob.style.transform = SW_OFF;
     put(cap2, n === 2 ? 1 : 0); put(cap4, n === 4 ? 1 : 0);
     put(gB4, n === 4 ? 1 : 0);
@@ -323,15 +330,18 @@ defineAnimation({
       animate(trkOff, [{ opacity: 0 }, { opacity: 0, offset: 0.99 }, { opacity: 1 }], { duration: 5200, easing: EASE.linear });
       animate(knob, [{ transform: "translateX(0px)", offset: 0 }, { transform: "translateX(0px)", offset: 0.96 }, { transform: SW_OFF }], { duration: 5400, easing: EASE.linear });
       gCloud.style.opacity = 1;
-      wPipe.forEach(p => animate(p, [{ opacity: 0, strokeDashoffset: 1 }, { opacity: 1, strokeDashoffset: 1, offset: 0.001 }, { opacity: 1, strokeDashoffset: 0 }, { opacity: 1, strokeDashoffset: 0, offset: 0.8 }, { opacity: 0, strokeDashoffset: 0 }], { duration: 3300, delay: 3300, easing: EASE.linear }));
-      animate(tagC, [{ opacity: 1 }, { opacity: 1, offset: 0.85 }, { opacity: 0 }], { duration: 2500, delay: 3300, easing: EASE.linear });
+      animate(gCloud, [{ opacity: 1 }, { opacity: 1, offset: 0.8 }, { opacity: 0.35 }], { duration: 3300, delay: 3300, easing: EASE.linear });
+      animate(gX, pop, { duration: 400, delay: 5500, easing: EASE.pop });
+      wPipe.forEach(p => animate(p, [{ opacity: 0, strokeDashoffset: 1, offset: 0 }, { opacity: 1, strokeDashoffset: 1, offset: 0.001 }, { opacity: 1, strokeDashoffset: 0, offset: 0.3 }, { opacity: 1, strokeDashoffset: 0, offset: 1 }], { duration: 3300, delay: 3300, easing: EASE.linear }));
+      animate(tagC, [{ opacity: 1 }, { opacity: 1, offset: 0.7 }, { opacity: 0.5 }], { duration: 2500, delay: 3300, easing: EASE.linear });
       animate(warnB, kfs([{ t: 0, o: 0, x: 556, y: 190, s: 0.7 }, { t: 3700, o: 0, x: 556, y: 190, s: 0.7 }, { t: 3800, o: 1, x: 556, y: 180, s: 1 }, { t: 4300, o: 1, x: 556, y: RUN, s: 1 }, { t: 4800, o: 1, x: 990, y: RUN, s: 1 }, { t: 4900, o: 0, x: 1010, y: RUN, s: 0.7 }], 4900), { duration: 4900, easing: EASE.linear });
       animate(flash, [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.6 }, { opacity: 0 }], { duration: 900, delay: 3900 });
-      animate(warnLbl, [{ opacity: 0 }, { opacity: 0, offset: 0.001 }, { opacity: 1 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 2800, delay: 4200, easing: EASE.linear });
+      animate(warnLbl, [{ opacity: 0, offset: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.7 }, { opacity: 0.8, offset: 1 }], { duration: 1700, delay: 4200, easing: EASE.linear });
     }
 
     if (n === 4) {
       animate(gLeft, fade(DIM, 0), { duration: 500 }); animate(gSrv, fade(1, 0), { duration: 500 }); animate(chipPipe, fade(1, 0), { duration: 500 });
+      [gCloud, warnLbl, tagC, gX].forEach((e, i) => animate(e, fade(i === 0 ? 0.35 : i === 3 ? 1 : i === 1 ? 0.8 : 0.5, 0), { duration: 500 }));
       animate(pill, fade(1, 0), { duration: 500 }); animate(sw, fade(1, 0), { duration: 500 }); animate(dlLabel, fade(1, 0), { duration: 500 });
       animate(memLabel, fade(1, 0), { duration: 500 });
       animate(gB4, rise(10), { duration: 500, delay: 400 });

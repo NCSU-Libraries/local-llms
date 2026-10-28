@@ -1,0 +1,267 @@
+---
+title: "Hands-on"
+subtitle: "About 25 minutes in the Ollama app and a terminal. Keep this page open next to them."
+---
+
+## 1. Ready? {#ready}
+
+You need the starter model, **{{< var starter.name >}}**, on your computer. Check in a terminal:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama list
+```
+:::
+
+**It works when** the list shows `{{< var starter.name >}}`. It isn't there? Go back to [Set up](setup.qmd#install),
+steps 2 and 4. Still downloading? Read ahead; the first steps need it.
+
+## 2. Chat with the starter {#chat}
+
+Open the **Ollama** app and choose **{{< var starter.name >}}** in the model menu. Paste each prompt below into the
+chat and press {{< kbd Enter >}}. Models answer a little differently each time, so yours won't match anyone else's.
+
+### a. Summarize an interview
+
+Here is a made-up interview. Every name in it is invented. Pretend it's your own research data: real names, real
+notes.
+
+::: {.callout-note collapse="true"}
+## The interview: click to open, then copy
+
+::: {.prompt}
+```text
+Summarize this interview in five bullet points. List the people who are named.
+
+Interview 14. Fictional, written for a workshop. Interviewer: Dr. Maren Okafor. Participant: Teodoro "Teo" Vasquez, a second-year chemistry student. Recorded October 9, 2026, in a campus study room.
+
+Maren: Thanks for talking with me, Teo. Let's start easy. Where do you usually study?
+
+Teo: It depends on the day. Mondays and Wednesdays I'm in the library, on the fourth floor, because it's quiet and the tables are big. On Tuesdays and Thursdays I have labs until late, so I study in my apartment. My roommate, Priya Nair, is in the same program, so we quiz each other at the kitchen table.
+
+Maren: What makes the library work for you?
+
+Teo: Honestly, the lack of distractions. At home there's a couch and a refrigerator. In the library, nobody knows me, so nobody stops to chat. I put my phone in my bag, set a timer for fifty minutes, and work until it rings. Then I take ten minutes and walk around.
+
+Maren: Do you ever study with a group?
+
+Teo: Only before exams. Last month, five of us from organic chemistry booked a room and spent three hours on reaction mechanisms. Our teaching assistant, Jonas Whitfield, had told us to draw every step by hand instead of memorizing, and that was much easier on a whiteboard. But group sessions go badly if someone hasn't done the reading. Then it turns into a lecture from one person.
+
+Maren: How do you keep your notes?
+
+Teo: A paper notebook for lectures, because I remember things better when I write them. Afterward I type the important parts into a notes app and tag them by chapter. Before an exam I print the tags and highlight what I still can't explain.
+
+Maren: Has your routine changed since your first year?
+
+Teo: A lot. Freshman year I studied the night before and slept four hours. My grades were fine, but I didn't remember anything by the next semester. Now I start a week ahead, with an hour a day. A advisor, Dr. Lucille Park, suggested spreading it out, and it helped more than I expected.
+
+Maren: What would make studying easier on campus?
+
+Teo: More outlets, honestly, and longer hours on weekends. The library closes early on Saturday, and that's when I have the most time. I would also like a quiet room that I could book for a single person, not just groups of four.
+
+Maren: Anything you would tell a new student?
+
+Teo: Find one place that is only for studying, and don't do anything else there. After a few weeks your brain learns the signal. Mine is the fourth floor, the table by the window, and a cup of tea that I never finish.
+
+Maren: Thank you, Teo.
+```
+:::
+:::
+
+**Notice:** you just handed interview notes with names in them to an AI, and nothing left your computer. Turn off
+your Wi-Fi if you want proof; it still works.
+
+### b. Ask something it can't know
+
+::: {.prompt}
+```text
+What are today's opening hours for D. H. Hill Library at NC State?
+```
+:::
+
+**Notice:** it has no web access, so it can't know. Does it say so, or does it sound sure of itself? Check the real
+answer on [the library's website](https://www.lib.ncsu.edu/hours).
+
+### c. A small puzzle
+
+::: {.prompt}
+```text
+In what year was NC State University founded? Answer in one sentence.
+```
+:::
+
+**Notice:** this is the question from the race. The answer sounds sure, but is it right? NC State was founded in
+1887. Small models often state a wrong fact with full confidence.
+
+## 3. Measure its speed {#speed}
+
+Open a terminal (as in [Set up](setup.qmd#starter)) and start a chat that reports its speed:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama run {{< var starter.name >}} --verbose
+```
+:::
+
+At the `>>>` prompt, ask anything, for example `Write a haiku about libraries.` When the answer ends, a few
+lines of numbers appear. Find **eval rate**: that's your speed in tokens per second. **Post it in the poll.**
+
+**It works when** you see a line like `eval rate: 65.81 tokens/s`.
+
+Leave that chat open and use a second terminal window to run:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama ps
+```
+:::
+
+**It works when** you see a table like this:
+
+```text
+NAME         ID              SIZE      PROCESSOR    CONTEXT    UNTIL
+gemma3:1b    97558784bdc9    1.2 GB    100% CPU     4096       4 minutes from now
+```
+
+**SIZE** is the memory the model uses. **PROCESSOR** says where it runs: `100% GPU` is the fast way. `100% CPU`
+is slower but works. Back in the first window, type `/bye` to leave the chat.
+
+## 4. Choose your second model {#choose}
+
+You saw the rule in "Your pick". Models in the same family differ mainly in size:
+
+| Model | Download | Reads images |
+| --- | --- | --- |
+| `gemma3:1b` (your starter) | 0.8 GB | no |
+| `gemma3:4b` | 3.4 GB | yes |
+| `gemma3:12b` | 8.2 GB | yes |
+| `gemma3:27b` | 17 GB | yes |
+
+Choose the **biggest** one that passes every rule that applies to you:
+
+- The download is **at most half your memory** (RAM; on a Mac with an Apple chip, that's the Mac's memory).
+- **NVIDIA graphics card:** at most the card's memory minus 1 GB.
+- **No graphics card** (only Intel or AMD integrated graphics): `gemma3:4b` at most. Bigger models run, but crawl.
+- **Today: 8 GB or less**, so it finishes in time. That rules out `gemma3:27b`.
+
+For example, a 16 GB laptop has a limit of 8 GB, so `gemma3:4b` fits and `gemma3:12b` (8.2 GB) just misses. Post your pick in the poll, then download it. Replace `<size>` with your choice, such as `4b`:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama pull gemma3:<size>
+```
+:::
+
+**It works when** it prints `success`. To check whether a download finished, run:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama list
+```
+:::
+
+A finished model appears in the list with its size.
+
+## 5. Compare {#compare}
+
+In the Ollama app, switch to your new model in the model menu. Start a **new chat** so the old one doesn't carry
+over, and paste the same three prompts from step 2.
+
+**Notice:**
+
+- Does the summary catch more of the names? In our test, the 1B model listed three of the five people, and the 4B model
+  all of them.
+- Is it as slow? Check its speed: `ollama run gemma3:<size> --verbose`, then read **eval rate**.
+- Bigger models know more and make fewer mistakes, but none of them can know today's library hours.
+
+### Ask the same thing twice
+
+Paste this into a new chat, twice:
+
+::: {.prompt}
+```text
+Write a one-sentence slogan for a library.
+```
+:::
+
+**Notice:** the two answers differ. A model picks each word with a little randomness.
+
+Now take away the randomness. In the terminal:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama run gemma3:<size>
+```
+:::
+
+At the `>>>` prompt, type these two lines, one at a time:
+
+::: {.prompt .prompt-shell}
+```text
+/set parameter seed 42
+/set parameter temperature 0
+```
+:::
+
+Then ask the slogan question. Type `/clear` to wipe the chat's memory of it, and ask the same question again.
+
+**It works when** the two answers are word for word the same. This is why a local model is good for research: with a
+fixed version and fixed settings, you can repeat a result. Type `/bye` to leave.
+
+## 6. Keep or clean up {#cleanup}
+
+Models take disk space. See what you have:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama list
+```
+:::
+
+To delete one you don't need, name it exactly:
+
+::: {.prompt .prompt-shell}
+```bash
+ollama rm gemma3:<size>
+```
+:::
+
+**It works when** it prints `deleted 'gemma3:<size>'` and the model is gone from `ollama list`. You can always
+download it again.
+
+Models live in `~/.ollama/models` on a Mac and in `C:\Users\<you>\.ollama\models` on Windows. **Settings → Model
+location** in the app can move them. Keep the starter and your pick if you have room: you'll use them again.
+
+## 7. Choosing your next model {#next}
+
+There are thousands of models. Before you download one, ask five questions:
+
+1. **Does it fit?** Download at most half your memory.
+2. **Is it fast enough?** Try it with `--verbose`.
+3. **Does it suit the task?** Reading images, code, other languages: check the model's page.
+4. **Does it work on *your* prompts?** Test it on your own work, not only the examples.
+5. **Which exact version?** Write down the name and tag, such as `gemma3:4b`, so you can repeat your results.
+
+Browse [ollama.com/search](https://ollama.com/search). **Be careful with any name ending in `:cloud`.** Those run on
+Ollama's servers, so your words leave your computer. Everything in this workshop stays local.
+
+## 8. Extras {#extras}
+
+- **Show it a picture.** From `gemma3:4b` up, the model reads images. In the app, attach a photo or a chart to your
+  message and ask, "What is in this picture?" `gemma3:1b` can't do this.
+- **Use it from code.** See [Use it from Python](python.qmd) to talk to your local model from a script.
+
+## If something goes wrong
+
+| What you see | What to do |
+| --- | --- |
+| It answers very slowly | A bigger model on a computer without a graphics card is slow. Close other apps, or use a smaller model. Compare with `ollama ps`: `100% CPU` means no graphics card is in use. |
+| An error about not enough memory when a model loads | That model is too big for your free memory. Quit other apps, or choose the next size down. |
+| `You need to be signed in to Ollama to run Cloud models.` | You chose a cloud model. Choose one of yours in the model menu, and keep **Cloud** off in Settings. |
+| `ollama pull` seems stuck | Wait a moment, then run the same line again. It picks up where it stopped. Check with `ollama list`. |
+| The app answers with a different model than you picked | Look at the model name in the app before you send. Picking a model doesn't download it: the first message does. Start a **new chat** after you switch. |
+| `ollama: command not found` or `could not connect to ollama server` | See the table on [Set up](setup.qmd#done). |
+
+<p class="small-muted">Checked against Ollama {{< var ollama.checked >}} on {{< var ollama.checked-date >}}. Ollama
+changes often; if a screen looks different, the <a href="{{< var ollama.docs >}}">official docs</a> win. Help with
+your own setup: <a href="{{< var help >}}">go.ncsu.edu/getdatahelp</a>.</p>

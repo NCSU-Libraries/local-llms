@@ -25,6 +25,10 @@ website:
         text: Home
       - href: setup.qmd
         text: Setup
+      - href: hands-on.qmd
+        text: Hands-on
+      - href: python.qmd
+        text: Python
     right:
       - href: slides/index.qmd
         text: Slides

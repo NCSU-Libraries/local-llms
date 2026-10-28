@@ -1,5 +1,5 @@
 {
-  "question": "How many r's are in the word strawberry?",
+  "question": "In what year was NC State University founded?",
   "machine": "MacBook Pro, Apple silicon, 24 GB (placeholder)",
   "ollama": "0.40.12",
   "recorded": "2026-10-27",
@@ -10,21 +10,188 @@
       "processor": "GPU",
       "eval_rate": 123.3,
       "correct": false,
-      "tokens": [[148,"There"],[156," are"],[163," two"],[170," r"],[177,"'"],[186,"s"],[194," in"],[203," \""],[210,"straw"],[218,"berry"],[225,"\""],[233,"."],[243," One"],[250," comes"],[257," after"],[265," the"],[273," t"],[282,","],[293," and"],[301," the"],[308," other"],[317," is"],[325," near"],[333," the"],[340," end"],[351,"."]]
+      "tokens": [
+        [
+          148,
+          "NC"
+        ],
+        [
+          159,
+          " State"
+        ],
+        [
+          169,
+          " University"
+        ],
+        [
+          180,
+          " was"
+        ],
+        [
+          190,
+          " founded"
+        ],
+        [
+          201,
+          " in"
+        ],
+        [
+          211,
+          " 1885."
+        ]
+      ]
     },
     {
       "model": "gemma3:12b",
       "processor": "GPU",
       "eval_rate": 22.1,
       "correct": true,
-      "tokens": [[462,"There"],[503," are"],[541," 3"],[578," r"],[628,"'"],[673,"s"],[722," in"],[769," \""],[814,"straw"],[865,"berry"],[907,"\""],[963,"."],[1024," The"],[1070," first"],[1119," comes"],[1165," after"],[1212," the"],[1248," t"],[1298,","],[1348," and"],[1386," the"],[1425," other"],[1463," two"],[1503," sit"],[1549," side"],[1591," by"],[1633," side"],[1672," near"],[1712," the"],[1763," end"],[1821,"."]]
+      "tokens": [
+        [
+          462,
+          "North"
+        ],
+        [
+          521,
+          " Carolina"
+        ],
+        [
+          580,
+          " State"
+        ],
+        [
+          638,
+          " University"
+        ],
+        [
+          697,
+          " was"
+        ],
+        [
+          756,
+          " founded"
+        ],
+        [
+          815,
+          " in"
+        ],
+        [
+          874,
+          " 1887"
+        ],
+        [
+          933,
+          " as"
+        ],
+        [
+          991,
+          " the"
+        ],
+        [
+          1050,
+          " Agricultural"
+        ],
+        [
+          1109,
+          " and"
+        ],
+        [
+          1168,
+          " Mechanical"
+        ],
+        [
+          1227,
+          " College"
+        ],
+        [
+          1286,
+          " of"
+        ],
+        [
+          1344,
+          " North"
+        ],
+        [
+          1403,
+          " Carolina."
+        ]
+      ]
     },
     {
       "model": "gemma3:4b",
       "processor": "CPU only",
       "eval_rate": 9.1,
       "correct": true,
-      "tokens": [[1180,"\""],[1288,"Straw"],[1380,"berry"],[1493,"\""],[1584," has"],[1684," 3"],[1807," r"],[1916,"'"],[2022,"s"],[2161,"."],[2307," One"],[2422," is"],[2516," after"],[2603," the"],[2700," t"],[2819,","],[2936," and"],[3057," two"],[3175," sit"],[3272," together"],[3382," just"],[3482," before"],[3602," the"],[3705," final"],[3800," y"],[3918,"."]]
+      "tokens": [
+        [
+          1180,
+          "North"
+        ],
+        [
+          1323,
+          " Carolina"
+        ],
+        [
+          1466,
+          " State"
+        ],
+        [
+          1609,
+          " University"
+        ],
+        [
+          1751,
+          " was"
+        ],
+        [
+          1894,
+          " founded"
+        ],
+        [
+          2037,
+          " in"
+        ],
+        [
+          2180,
+          " 1887"
+        ],
+        [
+          2323,
+          " as"
+        ],
+        [
+          2466,
+          " the"
+        ],
+        [
+          2609,
+          " Agricultural"
+        ],
+        [
+          2751,
+          " and"
+        ],
+        [
+          2894,
+          " Mechanical"
+        ],
+        [
+          3037,
+          " College"
+        ],
+        [
+          3180,
+          " of"
+        ],
+        [
+          3323,
+          " North"
+        ],
+        [
+          3466,
+          " Carolina."
+        ]
+      ]
     }
   ]
 }
