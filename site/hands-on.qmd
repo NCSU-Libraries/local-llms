@@ -234,18 +234,18 @@ location** in the app can move them. Keep the starter and your pick if you have 
 
 ## 7. Choosing your next model {#next}
 
-There are thousands of models. Before you download one, ask five questions:
+Use the checklist from the deck: does it fit, is it fast enough, does it suit the task, does it work on
+*your* prompts, and which exact version. Browse [ollama.com/search](https://ollama.com/search), and be careful with any
+name ending in `:cloud`: those run on Ollama's servers, so your words leave your computer.
 
-1. **Does it fit?** Download at most half your memory.
-2. **Is it fast enough?** Try it with `--verbose`.
-3. **Does it suit the task?** Reading images, code, other languages: check the model's page.
-4. **Does it work on *your* prompts?** Test it on your own work, not only the examples.
-5. **Which exact version?** Write down the name and tag, such as `gemma3:4b`, so you can repeat your results.
+## 8. Watch: 100 answers at once {#batch}
 
-Browse [ollama.com/search](https://ollama.com/search). **Be careful with any name ending in `:cloud`.** Those run on
-Ollama's servers, so your words leave your computer. Everything in this workshop stays local.
+Your instructor runs a short Python script live in a terminal. It codes 100 made-up survey answers by theme with a
+local model, in about a minute, then shows the theme counts, how often the model agrees with hand-coding, and a
+fingerprint that comes out the same on every run. Just watch; nothing to type. To run it yourself later, see
+[Code 100 answers at once](python.qmd#batch).
 
-## 8. Extras {#extras}
+## 9. Extras {#extras}
 
 - **Show it a picture.** From `gemma3:4b` up, the model reads images. In the app, attach a photo or a chart to your
   message and ask, "What is in this picture?" `gemma3:1b` can't do this.

@@ -185,7 +185,60 @@ The menus were confusing.,support
 these answers are made up, so never trust labels you haven't checked. Compare against labels you made yourself, and
 try a bigger model by changing the name in the script. Your answers never left your computer.
 
-## 7. Already have code for OpenAI's API? {#openai}
+## 7. Code 100 answers at once {#batch}
+
+Step 6 coded eight answers. Research means hundreds. This script codes 100 made-up answers to "What would improve
+your study experience at the Libraries?" into six themes, then checks itself against answers we coded by hand. Download
+both files into your project folder:
+
+- [survey-100.csv](downloads/survey-100.csv){download=""}: the answers, with our own coding on 20 of them.
+- [code_answers.py](downloads/code_answers.py){download=""}: the script, about 60 lines. Open it and read it.
+
+::: {.prompt .prompt-shell}
+```bash
+uv run --with ollama python code_answers.py survey-100.csv --model gemma3:4b
+```
+:::
+
+One line counts up while it works (`coded 37/100 · 21 s`). Then it prints:
+
+- **Themes:** how many answers landed in each theme, as a bar chart. Ollama's structured output makes every label one
+  of the six, never a made-up seventh.
+- **Agreement:** how many of our 20 hand-coded answers the model matched, and each one it didn't: our label, then
+  the model's.
+- **Time:** the total, and seconds per answer.
+- **Fingerprint:** eight characters computed from all 100 labels. Run the script again with the same model: the same
+  fingerprint means the same labels. It's step 5's `temperature` 0 and `seed`, at scale.
+
+It also writes `coded.csv`, with one theme per answer.
+
+**It works when** the last lines look like this. Your timing will differ, and your fingerprint may too: it
+holds only on the same computer, model and Ollama version.
+
+```text
+The model agrees with our coding on 19 of 20.
+  "I'd like a way to borrow laptops for a few days. Mine broke ..."
+      ours: wifi and computers   model: seats and outlets
+
+Total time: 95 s, 0.9 s per answer
+Fingerprint of all 100 labels: 88bd5688
+Run it again: same fingerprint, same labels.
+```
+
+Some honest notes:
+
+- **The check matters more than the counts.** The chart looks convincing whatever the labels are. The agreement line
+  is what tells you whether to believe it. Code a sample yourself first, as we did, and never trust labels you haven't
+  compared.
+- **Ambiguous answers are hard for people too.** About ten answers touch two themes. Our own pick is one defensible
+  choice, not the truth.
+- **Size matters.** With `gemma3:1b` on the same answers, the model agreed on only 12 of 20 and put nearly half the
+  answers in "quiet space". Try it, then compare with `gemma3:4b`.
+- **Speed depends on your computer.** On a Mac with a graphics chip, 100 answers take about a minute. On a laptop
+  without a graphics card, `gemma3:4b` can take several minutes, so try `gemma3:1b` first. It's quick but less
+  accurate.
+
+## 8. Already have code for OpenAI's API? {#openai}
 
 Ollama also speaks the same language as OpenAI's API. Point the `openai` package at your computer instead. Add it:
 
