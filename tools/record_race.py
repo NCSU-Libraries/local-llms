@@ -89,8 +89,9 @@ def get_json(host, path):
         return json.load(r)
 
 
-# The context length attendees' laptops get by default (Ollama gives 4,096 under 24 GiB of graphics memory). Left to
-# Ollama, this Mac chose up to 131,072 tokens, whose working memory pushed gemma3:12b partly out of graphics memory.
+# The context length attendees' laptops get by default (Ollama gives 4,096 under 24 GiB of graphics memory). Without
+# it, the request takes the Ollama app's Context length setting: at 256K on Alp's Mac, which gave gemma3:12b a
+# 131,072-token context whose cache pushed it partly out of graphics memory.
 NUM_CTX = 4096
 
 
