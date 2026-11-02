@@ -31,7 +31,7 @@ format:
 :::
 
 ::: {style="text-align:center;padding-top:40px"}
-[QR code to come]{.muted}
+![](../images/qr-session.svg){.qr .qr-big fig-alt="QR code for the workshop site, go.ncsu.edu/local-llms"}
 :::
 :::
 
