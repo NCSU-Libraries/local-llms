@@ -199,6 +199,26 @@ GPU servers, many users
 :::
 :::
 
+## Where to find models
+
+::: {.cards .two .hubs}
+::: {.card .red}
+[[Ollama's library](https://ollama.com/search){target="_blank"}]{.card-title}
+[ollama.com/search]{.hub-url}
+
+Pull by name: `ollama pull gemma3:4b`. Skip `:cloud`.
+:::
+
+::: {.card}
+[[Hugging Face](https://huggingface.co/models){target="_blank"}]{.card-title}
+[huggingface.co/models]{.hub-url}
+
+The largest shelf, with model cards and licenses. GGUF files run in Ollama.
+:::
+:::
+
+[“Open” means you can download it. Its license says what you may do with it.]{.hub-note}
+
 # Your turn {.divider background-color="#CC0000"}
 
 ## Open the hands-on page

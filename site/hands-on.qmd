@@ -235,8 +235,18 @@ location** in the app can move them. Keep the starter and your pick if you have 
 ## 7. Choosing your next model {#next}
 
 Use the checklist from the deck: does it fit, is it fast enough, does it suit the task, does it work on
-*your* prompts, and which exact version. Browse [ollama.com/search](https://ollama.com/search), and be careful with any
-name ending in `:cloud`: those run on Ollama's servers, so your words leave your computer.
+*your* prompts, and which exact version. Two places to look:
+
+- **[Ollama's library](https://ollama.com/search)** has the models Ollama pulls by name. A model's page lists its
+  sizes as tags, like `gemma3:4b`. Be careful with any name ending in `:cloud`: those run on Ollama's servers, so your
+  words leave your computer.
+- **[Hugging Face](https://huggingface.co/models)** is the largest collection of open models. A model's page has its
+  model card: what it's for, how it was made, and its license. Files in the GGUF format run in Ollama, LM Studio and
+  llama.cpp ([list them](https://huggingface.co/models?library=gguf)). On such a model's page, **Use this model →
+  Ollama** gives you an `ollama run hf.co/…` line to paste.
+
+"Open" means you can download a model; its license says what you may do with it. Read it before you use a model in
+research. Gemma's is the [Gemma Terms of Use](https://ai.google.dev/gemma/terms).
 
 ## 8. Watch: 100 answers at once {#batch}
 
