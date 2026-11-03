@@ -56,6 +56,7 @@ Data Science Services workshop taught by Alp Tezbasaran.
 | `site/python.qmd` | The extra for coders: chat, streaming, repeatable runs, a survey example and the OpenAI client, all against the local API |
 | `site/slides/anim/_shared/` | The animation framework copied from parallelization-with-python: stage fit, beats, deck bridge, and this deck's color tokens |
 | `tools/record_race.py` | Records the race through Ollama's local API: one streamed answer per lane, temperature 0, seed 42, a 4,096-token context. Run it on Alp's Mac with Zoom closed |
+| `tools/quarto.sh` | Runs Quarto 1.10.18 in Docker, from Quarto's official image: `render`, or `preview` on port 4848 |
 | `tools/check_links.py` | Checks every link and image in `site/_site` (`--web` also requests external URLs) |
 | `tools/shoot.mjs` | Headless Chrome screenshots of pages and slides |
 | `tools/wire_deck.py` | Rewrites each animation slide in the deck from its page: the title, one fragment per beat, the text alternative and `data-state`. `--check` steps every slide of the rendered deck |
@@ -65,17 +66,18 @@ Data Science Services workshop taught by Alp Tezbasaran.
 ## Commands
 
 ```bash
-Q=/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto   # Quarto 1.10.18; it isn't on PATH on this Mac
-$Q render site                  # full build into site/_site
-$Q preview site                 # live preview while editing
+tools/quarto.sh render site     # full build into site/_site
+tools/quarto.sh preview site    # live preview at http://localhost:4848 while editing
 python3 tools/check_links.py    # after a render
 uv run --with playwright python -I tools/wire_deck.py          # after adding or changing an animation; then render
 uv run --with playwright python -I tools/wire_deck.py --check  # after a render: every animation follows the clicks
 uv run --with playwright python -I tools/check_overlaps.py     # after a render: nothing under the chrome or off the slide
 ```
 
-The Pages workflow (`.github/workflows/deploy-pages.yml`) runs `quarto render site` with Quarto 1.10.18. Only Alp
-pushes.
+`tools/quarto.sh` runs Quarto 1.10.18 from its official image, `ghcr.io/quarto-dev/quarto:1.10.18`, so Docker must
+be running; quit Docker before a session, since it holds memory the models need. Quarto isn't installed on this Mac:
+RStudio, which bundled it, left on 2026-11-03. The image renders the same HTML as a native Quarto 1.10.18. The Pages
+workflow (`.github/workflows/deploy-pages.yml`) runs `quarto render site` with the same version. Only Alp pushes.
 
 ## Testing in a clean environment
 
@@ -172,7 +174,8 @@ Embedding, in the deck (`tools/wire_deck.py` writes these slides from the pages;
 - **GitHub Pages:** set Settings → Pages → Source to GitHub Actions *before* the first push. The first push of a root
   commit doesn't trigger the paths-filtered workflow, so run it once from the Actions tab.
 - **Screenshots with `shoot.mjs`:** load a fresh page for each slide (a hash change in the same page doesn't
-  navigate), and address slides by number (`#/1`), not by id.
+  navigate), and choose the slide with the shot's `slide` field, an index into `Reveal.getSlides()` counted from 0.
+  Hash numbers don't map one-to-one to slides: on 2026-11-03, `#/16` opened slide 22 of 23.
 - **Testing animations:** in a hidden or headless tab, requestAnimationFrame may not fire, so drive animations with
   `?b=n` or `window.__anim.show(n)` and never judge timing there. Background iframes cache: bump the query string after
   an edit. Reveal's neighbor preloading aborts iframe requests; those `requestfailed` messages are noise.
