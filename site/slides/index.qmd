@@ -28,6 +28,7 @@ format:
 
 1. Install Ollama
 2. `ollama pull {{< var starter.name >}}`
+3. Poll: [[{{< var poll-short >}}]({{< var poll >}}){target="_blank"}]{style="white-space:nowrap"}
 :::
 
 ::: {style="text-align:center;padding-top:40px"}

@@ -104,7 +104,7 @@ ollama run {{< var starter.name >}} --verbose
 :::
 
 At the `>>>` prompt, ask anything, for example `Write a haiku about libraries.` When the answer ends, a few
-lines of numbers appear. Find **eval rate**: that's your speed in tokens per second. **Post it in the poll.**
+lines of numbers appear. Find **eval rate**: that's your speed in tokens per second. **Post it in the [poll]({{< var poll >}}).**
 
 **It works when** you see a line like `eval rate: 65.81 tokens/s`.
 
@@ -144,7 +144,7 @@ Choose the **biggest** one that passes every rule that applies to you:
 - **No graphics card** (only Intel or AMD integrated graphics): `gemma3:4b` at most. Bigger models run, but crawl.
 - **Today: 8 GB or less**, so it finishes in time. That rules out `gemma3:27b`.
 
-For example, a 16 GB laptop has a limit of 8 GB, so `gemma3:4b` fits and `gemma3:12b` (8.2 GB) just misses. Post your pick in the poll, then download it. Replace `<size>` with your choice, such as `4b`:
+For example, a 16 GB laptop has a limit of 8 GB, so `gemma3:4b` fits and `gemma3:12b` (8.2 GB) just misses. Post your pick in the [poll]({{< var poll >}}), then download it. Replace `<size>` with your choice, such as `4b`:
 
 ::: {.prompt .prompt-shell}
 ```bash
