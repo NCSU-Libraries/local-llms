@@ -97,6 +97,13 @@ $red: #CC0000;
 .reveal .loop .stage.on { background: $red; color: #FFF; b { color: #FFF; } }
 .reveal .loop .arrow { align-self: center; font-size: 0.9em; color: $muted; }
 
+// Same models, other tools: two rows of tool cards, each under a group label big enough for Zoom.
+.reveal .tool-group { display: block; font-size: 0.5em; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: $muted; margin: 24px 0 0; }
+.reveal .cards.tools { margin-top: 10px; }
+.reveal .cards.tools .card { font-size: 0.6em; padding: 16px 18px; }
+.reveal .cards.tools .card-title { font-size: 1.3em; margin-bottom: 4px; }
+.reveal .cards.tools .card-title a { color: inherit; font-weight: inherit; text-decoration: none; }
+
 // Checklist (finish line)
 .reveal ul.finish { list-style: none; margin: 10px 0 0; padding: 0; font-size: 0.66em; line-height: 1.5; }
 .reveal ul.finish li { padding: 5px 0 5px 44px; position: relative; border-bottom: 1px dashed $card-border; }

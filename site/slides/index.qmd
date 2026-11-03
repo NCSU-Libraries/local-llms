@@ -149,6 +149,56 @@ Our team comes from a variety of academic backgrounds, including nuclear enginee
 
 [Text alternative: Your computer holds three windows on the left, the Ollama app, a Terminal and Python, a server block labeled Ollama, localhost:11434 in the middle, and on the right a memory bar, the chip and a disk holding a model file; only the app window is lit, with a red question bubble in it. The app sends the question to the Ollama server, the server loads the model from disk into memory, the chip generates the answer, and the reply goes back to the app window. The Terminal and Python windows light up and connect to the same server: one server, three windows. From outside the dashed edge, ollama.com sends a model file in through the edge onto the disk, a download that happens once; then a model with a cloud tag sends an orange bubble out through the edge to run on someone else's computer, until the Cloud switch is turned off and that path disappears. The model in memory carries a badge, gemma3:1b with ID 97558784bdc9, the chip uses seed 42, and two identical answer bubbles sit side by side: same model plus same seed gives the same answer.]{.visually-hidden}
 
+## Same models, other tools
+
+[Apps, no code]{.tool-group}
+
+::: {.cards .tools}
+::: {.card .red}
+[Ollama]{.card-title}
+Today's app
+:::
+
+::: {.card}
+[[LM Studio](https://lmstudio.ai){target="_blank"}]{.card-title}
+Chat and a model browser
+:::
+
+::: {.card}
+[[Jan](https://jan.ai){target="_blank"}]{.card-title}
+Offline-first chat app
+:::
+
+::: {.card}
+[[AnythingLLM](https://anythingllm.com){target="_blank"}]{.card-title}
+Chat with your documents
+:::
+:::
+
+[Code and servers]{.tool-group}
+
+::: {.cards .tools}
+::: {.card}
+[[llama.cpp](https://github.com/ggml-org/llama.cpp){target="_blank"}]{.card-title}
+The engine under Ollama
+:::
+
+::: {.card}
+[[MLX](https://github.com/ml-explore/mlx-lm){target="_blank"}]{.card-title}
+Fast on Apple chips
+:::
+
+::: {.card}
+[[Transformers](https://huggingface.co/docs/transformers){target="_blank"}]{.card-title}
+Hugging Face's Python library
+:::
+
+::: {.card}
+[[vLLM](https://docs.vllm.ai){target="_blank"}]{.card-title}
+GPU servers, many users
+:::
+:::
+
 # Your turn {.divider background-color="#CC0000"}
 
 ## Open the hands-on page
