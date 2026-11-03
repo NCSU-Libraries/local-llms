@@ -44,9 +44,9 @@ Ollama is a free app that downloads open AI models and runs them on your compute
 ::: {.panel-tabset}
 ### Mac
 
-1. Go to [ollama.com/download]({{< var ollama.download >}}) and click **Download for macOS**. The file is about
-   230 MB.
-2. Open the downloaded file and drag **Ollama** into **Applications**.
+1. Download [Ollama for Mac]({{< var ollama.mac >}}), about 230 MB. On
+   [ollama.com/download]({{< var ollama.download >}}), it's the **Download manually** link under the command.
+2. Open the downloaded file, **Ollama.dmg**, and drag **Ollama** into **Applications**.
 3. Open **Ollama** from Applications. If it offers to install the command line tool, say yes. It may ask for your
    password.
 4. When it asks you to sign in, choose **No thanks, I'll use Ollama locally**. You don't need an account.
@@ -55,8 +55,8 @@ A llama icon in the menu bar means Ollama is running.
 
 ### Windows
 
-1. Go to [ollama.com/download]({{< var ollama.download >}}) and click **Download for Windows**. The installer is
-   about 1.7 GB, so start it early.
+1. Download [Ollama for Windows]({{< var ollama.windows >}}), about 1.7 GB, so start it early. On
+   [ollama.com/download]({{< var ollama.download >}}), it's the **Download manually** link under the command.
 2. Run **OllamaSetup.exe**. It installs for your account only, so you don't need administrator rights.
 3. When Ollama opens and asks you to sign in, choose **No thanks, I'll use Ollama locally**. You don't need an
    account.

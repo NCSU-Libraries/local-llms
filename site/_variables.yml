@@ -20,6 +20,9 @@ workshops: "https://go.ncsu.edu/datavizworkshops"   # every DSS workshop, with d
 # Ollama, and the version these pages were checked against
 ollama:
   download: "https://ollama.com/download"
+  # The installers themselves: the "Download manually" links under the install command on the download page (2026-11-03)
+  mac: "https://ollama.com/download/Ollama.dmg"
+  windows: "https://ollama.com/download/OllamaSetup.exe"
   docs: "https://docs.ollama.com"
   checked: "0.40.12"
   checked-date: "October 27, 2026"
